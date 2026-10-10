@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 
@@ -12,7 +13,7 @@ st.title("🤖 Agent RAG Multimodal")
 st.markdown("Posez vos questions sur le document multimodal et obtenez des réponses précises basées sur le texte et les images.")
 
 # URL de l'API FastAPI
-API_URL = "http://api:8000/query"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/query")
 
 # Initialisation de l'historique des messages dans la session Streamlit
 if "messages" not in st.session_state:

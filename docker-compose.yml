@@ -18,6 +18,7 @@ services:
       - "8501:8501"
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - API_URL=http://api:8000/query
     volumes:
       - ./data:/app/data
     command: streamlit run src/app.py --server.address 0.0.0.0 --server.port 8501
