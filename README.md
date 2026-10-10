@@ -1,73 +1,91 @@
-# agent-rag-multimodal
+# Multimodal RAG Agent 
 
 Application RAG (Retrieval-Augmented Generation) multimodale pour l'analyse et l'interrogation de documents complexes (PDF, schémas, tableaux, Markdown).
 
+## Fonctionnalités Clés
 
-## 1. Objectif du projet
-
-Permettre à l'utilisateur d'interroger une base de connaissances complexe contenant du texte, des structures tabulaires et des éléments visuels (images, schélas).
-
-La première version se concentre sur un parcours simple : 
-
-1. charger un document (PDF ou Markdown) ;
-2. extraire et indexer le texte et les éléments visuels ;
-3. poser une question en langage naturel ;
-4. obtenir une réponse précise générée par un LLM avec sources associées ;
-5. consulter l'historique et la progression des échanges.
+- Multimodalité : Extraction de texte et d'images intégrées à partir de fichiers PDF via `PyMuPDF`.
+- Vision par IA : Analyse automatique et génération de description textuelles détaillés des schémas/images par **Gemini Vision**.
+- Indexation vectorielle : Utilisation de **ChromaDB** et d'embeddings.
+- Architecture API : Backend asynchrone avec **FastAPI**.
+- Interface Web : Application interactive fait avec **Strealit**.
+- Conteneurisation : Utilisation de **Docker**
 
 
-## 2. Roadmap
+## Stack technique 
 
-### Etape 1 - Base du projet et RAG textuel
-
-- initialiser l'environnement et la structure du projet ;
-- charger un fichier PDF/Markdown simple ;
-- découper le texte en chunks ;
-- générer des embeddings et les stoker dans une base vectorielle locale (ChromaDB) ;
-- exécuter une première requête de réponse textuelle avec un LLM.
-
-### Etape 2 - Prise en charge multimodale
-
-- intégrer l'extraction d'images et de schémas depuis les PDF ;
-- générer des description textuelles d'image via un modèle Vision ;
-- migrer vers Qdrant pour la gestion des vecteurs complexes ;
-- lier les explications visuelles aux réponses RAG.
-
-### Etape 3 - API Backend
-
-- créer l'application FastAPI ;
-- définir l'endpoint `/upload` pour l'ingestion de documents ;
-- définir l'endpoint `/quesry` pour le traitement des questions.
-
-### Etape 4 - Interface Utilisateur 
-
-- créer l'interface web interactive avec Streamlit ;
-- ajouter le composant de chat et l'upload de fichiers ;
-- afficher les sources et aperçus d'images dans l'interface.
-
-### Etape 5 - Optimisation et Conteneurisation
-
-- dockeriser l'application ;
-- optimiser les temps de réponse et la précision de recherche.
+- Langage : Python 3.10+
+- RAG : LangChain, LangChain-Google-GenAI, LangChain-Chroma,HuggingFaceEmbeddings
+- IA et Vision : Google Gemini (Gemini Flash / Gemini Vision)
+- Stockage Vectoriel : ChromaDB
+- Backend : FastAPI, Uvicorn
+- Frontend : Streamlit
+- DevOps : Docker
 
 
-## 3. Architecture prévue
+## Structure du projet
 
 ```text
-Interface Stramlit
-    ↓
-API FastAPI
-    ↓
-Framework RAG (LangChain / LlamaIndex)
-    ↓
-Base Vectorielle (Qdrant / ChromaDB) + Modèle LLM / Vision
+agent-rag-multimodal/
+│
+├── data/                       # Dossier contenant les PDF
+│   └── sample_multimodal.pdf
+│
+├── src/
+│   ├── api.py                  # Backend FastAPI
+│   ├── app.py                  # Interface utilisateur Streamlit
+│   ├── rag_base.py             # Script RAG textuel de base
+│   └── rag_multimodal.py       # Pipeline d'extraction et d'indexation multimodale
+│   
+├── chroma_multimodal_db/       # Base vectorielle ChromaDB 
+├── Dockerfile                  # Config image Docker
+├── docker-compose.yml          # Orchestration des services (API + Streamlit)
+├── requirements.txt            # Dépendances du projet
+└── .env                        # Variables d'environnement (Clé API Gemini)
+
+## Installation et Lancement
+
+### Option 1 : Lancement via Docker Compose
+
+1. Créer un ficher .env à la racine contenant votre clé API : 
+```text
+GOOGLE_API_KEY=votre_cle_api_gemini_ici
+````
+
+2. Lancez les conteneurs :
+```bash
+docker compose up --build
 ```
 
-## 4. Stack technique envisagée
+3. Accédez aux servies : 
+- Interface Steamlit : http://localhost:8501
+- Documentation FastAPI : http://localhost:8000/docs
 
-- Python ;
-- LangChain / LlamaIndex ;
-- Qdrant / ChromaDB ;
-- FastAPI ;
-- StreamLit ;
-- Docker.
+### Option 2 : lancement en local
+
+1. Clone le projet et créer un environemment virtuel :
+```bash
+python -m venv venv
+source venv/bin/activate # Sur Windows : venv\Scripts\activate
+```
+
+2. Installer les dépendaces :
+```bash
+pip install -r requirements.txt
+````
+
+3. Créer un ficher .env à la racine contenant votre clé API : 
+```text
+GOOGLE_API_KEY=votre_cle_api_gemini_ici
+```
+
+4. Lancer le Backend (Terminal 1) :
+```bash
+uvicorn src.api:app --reload
+```
+
+5. Lancer le Frontend (Terminal 2) :
+```bash
+streamlit run src/app.py
+```
+
