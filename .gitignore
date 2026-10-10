@@ -1,0 +1,13 @@
+# Environnement virtuel
+venv/
+.venv.
+
+# Variables d'environnement / Clés API
+.env
+
+# Fichiers temporaire Python
+*.pyc
+__pycache__/
+
+# Fichiers de configuration IDE
+.vscode/
