@@ -11,3 +11,6 @@ __pycache__/
 
 # Fichiers de configuration IDE
 .vscode/
+
+# Base de données Chroma
+chroma_db/
