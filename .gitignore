@@ -11,6 +11,8 @@ __pycache__/
 
 # Fichiers de configuration IDE
 .vscode/
+.DS_Store
 
 # Base de données Chroma
 chroma_db/
+chroma_multimodal_db
