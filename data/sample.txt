@@ -1,0 +1,1 @@
+Le projet Agent RAG Multimodal utilise Python, FastAPI, Streamlit et Qdrant.Il a pour objectif d'analyser des documents complexes incluant du texte et des images.L'intelligence artificielle générative permet d'interroger ces sources de manière fluide.
