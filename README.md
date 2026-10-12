@@ -12,6 +12,24 @@ Application RAG (Retrieval-Augmented Generation) multimodale pour l'analyse et l
 - Conteneurisation : Utilisation de **Docker**
 
 
+## Roadmap
+
+### Phase 1 : 
+1. Affichage des sources et traçabilité : Ajout des métadonnées contextuelles (nom du fichier, numéro de page, index de l'image).
+2. Re-ranking : Intégration d'un modèle Cross-Encoder pour filtrer, réevaluer et trier les documents avant de les soumettre au LLM.
+3. Réecriture de la requête : Reformulation et enrichissement automatique des questions de l'utilisateur pour optimiser l'efficacité de la recherche vectorielle.
+
+### Phase 2 :
+4. Recherche hybride : Couplage de la recherche vectiorielle à une recheche textuelle.
+5. Conservation de la mémoire : Implémentation d'un historique de dialogue persistant pour permettre à l'agent de gérer des questions de suivi.
+6. Traitement asynchrone : Délégation de l'ingestion lourde des PDF en arrière plan 
+
+### Phase 3 : 
+7. Evaluation du retrieval : Mesure des performances de la recherche du LLM
+8. Migration vers une base vectorielle de production : Passage de ChromaDB (stockage local) à Qdrant.
+9. Sécurisation et Authentification : Mise en place d'une protection par clés API ou tokens JWT sur les enpoints de l'API. 
+
+
 ## Stack technique 
 
 - Langage : Python 3.10+
