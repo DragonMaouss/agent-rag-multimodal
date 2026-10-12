@@ -11,14 +11,14 @@ services:
       - ./data:/app/data
     command: uvicorn src.api:app --host 0.0.0.0 --port 8000
 
-  strealit : 
+  streamlit : 
     build: .
     container_name: rag_streamlit_frontend
     ports:
       - "8501:8501"
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - API_URL=http://api:8000/query
+      - API_URL=http://api:8000
     volumes:
       - ./data:/app/data
     command: streamlit run src/app.py --server.address 0.0.0.0 --server.port 8501
