@@ -13,7 +13,8 @@ st.title("🤖 Agent RAG Multimodal")
 st.markdown("Posez vos questions sur le document multimodal et obtenez des réponses précises basées sur le texte et les images.")
 
 # URL de l'API FastAPI
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/query")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+
 
 # Initialisation de l'historique des messages dans la session Streamlit
 if "messages" not in st.session_state:
@@ -35,7 +36,7 @@ if prompt := st.chat_input("Posez votre question ici..."):
     with st.chat_message("assistant") :
         with st.spinner("L'agent RAG Multimodal réfléchit..."):
             try : 
-                reponse = requests.post(API_URL, json={"query": prompt})
+                reponse = requests.post(f"{API_URL}/query", json={"query": prompt})
                 if reponse.status_code == 200:
                     answer = reponse.json().get("answer", "Aucune réponse trouvée.")
                 else:
