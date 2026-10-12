@@ -16,6 +16,23 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 
+# Initialisation globale du RAG au démarrage de l'application
+print("--- Initialisation du RAG Multimodal ---")
+
+embedding = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-mpnet-base-v2",
+    encode_kwargs={"normalize_embeddings": True},
+)
+
+# Chargement de la base Chroma
+vectorstore = Chroma(
+    persist_directory="./chroma_multimodal_db",
+    embedding_function=embedding,
+)
+
+# Congiguration du modèle LLM
+llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0)
+
 def extract_pdf_multimodal(pdf_path : str) :
     """
     Extrait le texte et les images d'un PDF, puis décrit les images avec Gemini Vision
@@ -92,43 +109,26 @@ def extract_pdf_multimodal(pdf_path : str) :
 
     return documents
 
+def process_and_index_file(pdf_path : str) :
+    """
+    Extrait, découpe et ajoute les documents du PDF dans la base Chroma existante.
+    """
+    docs = extract_pdf_multimodal(pdf_path=pdf_path)
+    if not docs :
+        return 0
 
-
-def run_multimodal_rag() : 
-    pdf_file_path = "data/sample_multimodal.pdf"
-
-
-    # Création d'un petit fichier texte pour le test
-    if not os.path.exists(pdf_file_path):
-        os.makedirs(os.path.dirname(pdf_file_path), exist_ok=True)
-        print(f"Le fichier {pdf_file_path} n'existe pas. Veuillez le créer avec du texte et des images pour le test.")
-        return
-
-    print("--- 1. Extraction Multimodale (Texte et Images) ---")
-    docs = extract_pdf_multimodal(pdf_file_path)
-    if not docs:
-        print("Aucun document extrait. Veuillez vérifier le fichier PDF.")
-        return
-
-    print("--- 2. Découpage du document en chunks ---")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=(50))
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=50)
     split_docs = text_splitter.split_documents(docs)
+    vectorstore.add_documents(split_docs)
 
-    print("--- 3. Création de l'index Chroma ---")
-    embedding = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-mpnet-base-v2",
-        encode_kwargs={"normalize_embeddings": True},
-    )
-    
-    vectorstore = Chroma.from_documents(
-        documents=split_docs, 
-        embedding=embedding,
-        persist_directory="./chroma_multimodal_db"
-    )
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    return len(docs)
 
-    print("--- 4. Création de la chaîne RAG ---")
-    llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0)
+
+def get_rag_chain():
+    """
+    Créer et retourne une chaîne RAG actualisée avec le retriever pointant sur la base
+    """
+    retriever = vectorstore.as_retriever(search_kwargs={"k":10})
 
     system_prompt = (
         "Vous êtes un assistant expert capable d'analyser à la fois du texte et des descriptions de schémas ou d'images. "
@@ -146,19 +146,8 @@ def run_multimodal_rag() :
         llm=llm,
         prompt=prompt
     )
-    rag_chain = create_retrieval_chain(
+
+    return create_retrieval_chain(
         retriever=retriever,
         combine_docs_chain=question_answer_chain
     )
-
-    print("--- 5. Test de la chaîne RAG ---")
-    query = "Que montre le schéma ou l'image principale du document ?"
-    print(f"Question: {query}")
-
-    responde = rag_chain.invoke({"input": query})
-    print(f"Réponse: {responde['answer']}")
-
-if __name__ == "__main__":
-    run_multimodal_rag()
-           
-
