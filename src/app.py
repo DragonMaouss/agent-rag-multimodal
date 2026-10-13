@@ -75,14 +75,41 @@ if prompt:
                 try : 
                     reponse = requests.post(f"{API_URL}/query", json={"query": user_text})
                     if reponse.status_code == 200:
-                        answer = reponse.json().get("answer", "Aucune réponse trouvée.")
+                        data = reponse.json()
+                        answer = data.get("answer", "Aucune réponse trouvée.")
+                        sources = data.get("sources", [])
                     else:
                         answer = f"Erreur lors de la requête à l'API : {reponse.status_code}"
+                        sources = []
                 except requests.exceptions.ConnectionError as e:
                     answer = f"Erreur de connexion à l'API : {str(e)}"
+                    sources = []
                 except Exception as e:
                     answer = f"Une erreur est survenue : {str(e)}"
+                    sources = []
 
                 st.markdown(answer)
+
+                # Affichage des sources
+                if sources :
+                    with st.expander("Sources et documents référencés"):
+                        for src in sources:
+                            source_name = src.get("source")
+                            page_num = src.get("page")
+                            img_idx = src.get("image_index")
+
+                            if img_idx is not None:
+                                st.markdown(f"- {source_name} (Page {page_num} — Schéma/Image n°{img_idx})")
+                            else:
+                                st.markdown(f"- {source_name} (Page {page_num})")
+                
+                # Construire le message complet
+                assistant_full_content = answer
+                if sources:
+                    sources_text = "\n\n*Sources :* " + ", ".join(
+                        [f"{s['source']} (p. {s['page']}" + (f", img {s['image_index']}" if s['image_index'] else "") + ")" for s in sources]
+                    )
+                    assistant_full_content += sources_text
+
                 # Ajouter la réponse de l'assistant à l'historique
-                st.session_state.messages.append({"role": "assistant", "content": answer})
+                st.session_state.messages.append({"role": "assistant", "content": assistant_full_content})
