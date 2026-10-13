@@ -1,0 +1,164 @@
+[
+  {
+    "id": 1,
+    "question": "Quels sont les trois paradigmes de RAG présentés dans l'article de synthèse de Gao et al. ?",
+    "expected_keywords": ["Naive RAG", "Advanced RAG", "Modular RAG"],
+    "ground_truth": "L'article catégorise l'évolution du RAG en trois grands paradigmes : Naive RAG, Advanced RAG et Modular RAG[cite: 10, 12, 13]."
+  },
+  {
+    "id": 2,
+    "question": "Quelles sont les limites principales du RAG Naïf (Naive RAG) ?",
+    "expected_keywords": ["precision", "rappel", "hallucination", "bruit"],
+    "ground_truth": "Le RAG Naïf souffre de difficultés de récupération (précision/rappel), de problèmes de génération (hallucinations) et d'obstacles d'augmentation[cite: 12]."
+  },
+  {
+    "id": 3,
+    "question": "Sur quoi se concentre principalement l'Advanced RAG pour améliorer les performances ?",
+    "expected_keywords": ["pre-retrieval", "post-retrieval", "indexation"],
+    "ground_truth": "L'Advanced RAG introduit des optimisations au niveau de l'indexation, ainsi que des stratégies de pré-récupération et de post-récupération[cite: 12, 13]."
+  },
+  {
+    "id": 4,
+    "question": "Quels nouveaux modules spécifiques sont introduits par le Modular RAG ?",
+    "expected_keywords": ["Search", "Memory", "Routing", "Predict", "Fusion"],
+    "ground_truth": "Le Modular RAG introduit des modules tels que Search, RAG-Fusion, Memory, Routing, Predict et Task Adapter[cite: 13, 14]."
+  },
+  {
+    "id": 5,
+    "question": "Quelle est la différence fondamentale entre le RAG et le Fine-tuning selon l'article ?",
+    "expected_keywords": ["textbook", "interanliser", "dynamique"],
+    "ground_truth": "Le RAG agit comme un manuel de référence externe mis à jour en temps réel, tandis que le Fine-tuning internalise les connaissances de manière statique[cite: 14]."
+  },
+  {
+    "id": 6,
+    "question": "Quel concept de granularité de récupération est introduit par DenseX ?",
+    "expected_keywords": ["propositions", "atomiques"],
+    "ground_truth": "DenseX propose d'utiliser des propositions, définies comme des expressions atomiques encapsulant un segment factuel unique[cite: 17, 18]."
+  },
+  {
+    "id": 7,
+    "question": "En quoi consiste la méthode HyDE en matière d'optimisation de requête ?",
+    "expected_keywords": ["hypothetical", "documents", "embedding"],
+    "ground_truth": "HyDE construit des documents hypothétiques (réponses simulées) pour effectuer la recherche par similarité d'embedding de réponse à réponse[cite: 19]."
+  },
+  {
+    "id": 8,
+    "question": "Qu'est-ce que le problème du 'Lost in the middle' dans les grands contextes ?",
+    "expected_keywords": ["debut", "fin", "milieu", "oublier"],
+    "ground_truth": "Le problème du 'Lost in the middle' décrit la tendance des LLM à se concentrer sur le début et la fin des longs textes tout en oubliant le milieu[cite: 20]."
+  },
+  {
+    "id": 9,
+    "question": "Quels sont les trois types de processus d'augmentation en dehors de la récupération unique ?",
+    "expected_keywords": ["iterative", "recursive", "adaptive"],
+    "ground_truth": "Les trois processus d'augmentation sont l'itération (Iterative), la récursion (Recursive) et l'adaptation (Adaptive)[cite: 20, 21]."
+  },
+  {
+    "id": 10,
+    "question": "Quels sont les trois scores de qualité évalués dans un système RAG ?",
+    "expected_keywords": ["context relevance", "faithfulness", "answer relevance"],
+    "ground_truth": "Les scores de qualité évalués sont la pertinence du contexte (Context Relevance), la fidélité de la réponse (Faithfulness) et la pertinence de la réponse (Answer Relevance)[cite: 22]."
+  },
+  {
+    "id": 11,
+    "question": "Quelles sont les quatre capacités requises pour évaluer un système RAG de manière approfondie ?",
+    "expected_keywords": ["noise robustness", "negative rejection", "integration", "counterfactual"],
+    "ground_truth": "Les quatre capacités sont la robustesse au bruit, le rejet négatif, l'intégration d'informations et la robustesse contrefactuelle[cite: 22]."
+  },
+  {
+    "id": 12,
+    "question": "Quel est le total général de l'actif du bilan d'ITM Entreprises au 30/06/2026 ?",
+    "expected_keywords": ["8 208 542", "milliers d'euros"],
+    "ground_truth": "Le total général de l'actif d'ITM Entreprises au 30/06/2026 est de 8 208 542 milliers d'euros[cite: 33]."
+  },
+  {
+    "id": 13,
+    "question": "Quel est le montant du bénéfice net (résultat de l'exercice) pour ITM Entreprises au 30/06/2026 ?",
+    "expected_keywords": ["161 970", "bénéfice"],
+    "ground_truth": "Le bénéfice net de l'exercice N s'élève à 161 970 milliers d'euros[cite: 34, 35]."
+  },
+  {
+    "id": 14,
+    "question": "Quel était le résultat de l'exercice précédent (N-1) pour ITM Entreprises ?",
+    "expected_keywords": ["-75 597", "perte"],
+    "ground_truth": "L'exercice N-1 s'est soldé par une perte de 75 597 milliers d'euros[cite: 34, 35]."
+  },
+  {
+    "id": 15,
+    "question": "Quel est le montant total des capitaux propres d'ITM Entreprises au 30/06/2026 ?",
+    "expected_keywords": ["2 911 229", "capitaux propres"],
+    "ground_truth": "Le total des capitaux propres s'élève à 2 911 229 milliers d'euros[cite: 34]."
+  },
+  {
+    "id": 16,
+    "question": "Quel est le montant net des immobilisations incorporelles d'ITM Entreprises au 30/06/2026 ?",
+    "expected_keywords": ["27 924", "incorporelles"],
+    "ground_truth": "Le total net des immobilisations incorporelles est de 27 924 milliers d'euros[cite: 32]."
+  },
+  {
+    "id": 17,
+    "question": "Quel est le montant des disponibilités en trésorerie d'ITM Entreprises au 30/06/2026 ?",
+    "expected_keywords": ["1 046 510", "disponibilités"],
+    "ground_truth": "Les disponibilités s'élèvent à 1 046 510 milliers d'euros[cite: 32]."
+  },
+  {
+    "id": 18,
+    "question": "Quel est le montant total des dettes d'ITM Entreprises au 30/06/2026 ?",
+    "expected_keywords": ["5 274 124", "dettes"],
+    "ground_truth": "Le total des dettes est de 5 274 124 milliers d'euros[cite: 34]."
+  },
+  {
+    "id": 19,
+    "question": "Quel est le montant du chiffre d'affaires (production vendue) d'ITM Entreprises à l'exercice N ?",
+    "expected_keywords": ["138 529", "chiffre d'affaires"],
+    "ground_truth": "Le montant net du chiffre d'affaires (production vendue) est de 138 529 milliers d'euros[cite: 35]."
+  },
+  {
+    "id": 20,
+    "question": "Quels sont les trois parcours proposés en M2 Informatique à l'Université Paris Cité ?",
+    "expected_keywords": ["DATA", "IMPAIRS", "LP"],
+    "ground_truth": "Les trois parcours du M2 Informatique sont DATA, IMPAIRS et LP."
+  },
+  {
+    "id": 21,
+    "question": "Quel est le laboratoire de recherche associé à l'UFR d'informatique ?",
+    "expected_keywords": ["IRIF", "recherche"],
+    "ground_truth": "Le laboratoire de recherche de l'UFR est l'IRIF (Institut de Recherche en Informatique Fondamentale)[cite: 39]."
+  },
+  {
+    "id": 22,
+    "question": "Qui exerce les fonctions de directeur de l'UFR d'informatique ?",
+    "expected_keywords": ["Giulio Manzonetto"],
+    "ground_truth": "Le directeur de l'UFR est Giulio Manzonetto[cite: 39]."
+  },
+  {
+    "id": 23,
+    "question": "Qui est le responsable pédagogique du parcours IMPAIRS et du M2 Informatique ?",
+    "expected_keywords": ["François Laroussinie"],
+    "ground_truth": "Le responsable du M2 et du parcours IMPAIRS est François Laroussinie[cite: 39]."
+  },
+  {
+    "id": 24,
+    "question": "Qui est responsable du parcours DATA en M2 Informatique ?",
+    "expected_keywords": ["Amélie Gheerbrant"],
+    "ground_truth": "La responsable du parcours DATA est Amélie Gheerbrant[cite: 39]."
+  },
+  {
+    "id": 25,
+    "question": "Qui est le responsable du parcours LP en M2 Informatique ?",
+    "expected_keywords": ["Mohamed Foughali"],
+    "ground_truth": "Le responsable du parcours LP est Mohamed Foughali[cite: 39]."
+  },
+  {
+    "id": 26,
+    "question": "Quelle est la durée réglementaire du stage de M2 Informatique ?",
+    "expected_keywords": ["4 mois", "6 mois"],
+    "ground_truth": "La durée du stage est de 4 mois minimum à 6 mois maximum[cite: 43]."
+  },
+  {
+    "id": 27,
+    "question": "Quel est le numéro de la salle de détente mise à disposition au sein de l'UFR ?",
+    "expected_keywords": ["1019", "détente"],
+    "ground_truth": "La salle de détente de l'UFR d'informatique porte le numéro 1019[cite: 39]."
+  }
+]
