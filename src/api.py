@@ -1,22 +1,8 @@
 import os
-import io
-import base64
-from PIL import Image
-import pymupdf
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from src.rag_multimodal import process_and_index_file, get_rag_chain
-
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_core.documents import Document
-from langchain_core.messages import HumanMessage
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 load_dotenv()
