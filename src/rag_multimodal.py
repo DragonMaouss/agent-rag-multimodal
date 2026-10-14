@@ -15,6 +15,7 @@ from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_docling import DoclingLoader
 from langchain_docling.loader import ExportType
 from langchain_community.vectorstores.utils import filter_complex_metadata
+from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 
@@ -123,3 +124,17 @@ def get_rag_chain():
         retriever=retriever,
         combine_docs_chain=question_answer_chain
     )
+
+
+def rewrite_query(user_query: str):
+    rewrite_prompt = ChatPromptTemplate.from_messages([
+        ("system", "Vous êtes un expert en recherche documentaire. "
+                   "Votre rôle est de réécrire la question de l'utilisateur pour qu'elle soit claire, "
+                   "autonome et maximise la pertinence d'une recherche par similarité dans des documents techniques. "
+                   "Ne répondez pas à la question, donnez uniquement la requête reformulée."),
+        ("human", "Question originale : {query}")
+    ])
+
+    rewriter_chain = rewrite_prompt | llm | StrOutputParser()
+    rewritten = rewriter_chain.invoke({"query" : user_query})
+    return rewritten

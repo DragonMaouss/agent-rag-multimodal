@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import List, Optional
-from src.rag_multimodal import process_and_index_file, get_rag_chain
+from src.rag_multimodal import process_and_index_file, get_rag_chain, rewrite_query
 
 
 load_dotenv()
@@ -62,9 +62,10 @@ def query_rag(request: QueryRequest):
     try : 
         if not request.query.strip():
             raise HTTPException(status_code=400, detail="La requête ne peut pas être vide.")
-
+        
         # Exécution de la chaîne RAG
-        response = rag_chain.invoke({"input": request.query})
+        optimized_request = rewrite_query(request.query)
+        response = rag_chain.invoke({"input": optimized_request})
 
         # Extraction des sources
         sources_list = []
