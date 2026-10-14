@@ -75,12 +75,6 @@ def process_and_index_file(pdf_path : str) :
     if not docs :
         return 0
 
-    """
-    # Evite d'avoir deux fois le meme fichier
-    existing = vectorstore.get(where={"source" : pdf_path})
-    if existing["ids"]:
-        vectorstore.delete(ids=existing["ids"])
-    """
     vectorstore.add_documents(docs)
     return len(docs)
 
