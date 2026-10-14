@@ -13,6 +13,9 @@ from langchain_classic.chains.combine_documents import create_stuff_documents_ch
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_classic.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 load_dotenv()
 
@@ -128,7 +131,24 @@ def get_rag_chain():
     """
     Créer et retourne une chaîne RAG actualisée avec le retriever pointant sur la base
     """
-    retriever = vectorstore.as_retriever(search_kwargs={"k":10})
+    # Model de reranking Cross Encoder
+    reranker_model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-large")
+
+    # Compresseur qui retient les top_n documents les plus pertinants
+    compressor = CrossEncoderReranker(
+        model=reranker_model,
+        top_n=5
+    )
+    # Retriever de base
+    base_retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k":20}
+    )
+
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor,
+        base_retriever=base_retriever
+    )
 
     system_prompt = (
         "Vous êtes un assistant expert capable d'analyser à la fois du texte et des descriptions de schémas ou d'images. "
