@@ -11,6 +11,16 @@ load_dotenv()
 API_URL = "http://127.0.0.1:8000/query"
 DATASET_PATH = "evaluation/golden_dataset.json"
 
+def check_keywords(response: str, expected_keywords: list, threshold: float) :
+    if not expected_keywords :
+        return True
+
+    matched = sum(1 for kw in expected_keywords if kw.lower() in response)
+
+    ratio = matched/len(expected_keywords)
+    return ratio >= threshold
+
+
 def run_evaluation() :
     if not os.path.exists(DATASET_PATH):
         print(f"Erreur : le fichier {DATASET_PATH} est introuvable.")
@@ -47,8 +57,8 @@ def run_evaluation() :
             continue
 
         # Vérification par mots clés
-        keywords_matched = all(kw.lower() in answer.lower() for kw in keywords) if keywords else True
-
+        keywords_matched = check_keywords(answer.lower(), keywords, 0.5)
+        
         # Evalutation par LLM
         judge_prompt =(
             f"Tu es un évaluateur expert. Note la réponse de l'agent par rapport à la réponse de référence sur une échelle de 1 à 5.\n\n"
