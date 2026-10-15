@@ -17,6 +17,9 @@ from langchain_docling.loader import ExportType
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.retrievers import BM25Retriever
+from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import Distance, VectorParams
 
 
 # Chargement des variables d'environnement
@@ -25,20 +28,39 @@ load_dotenv()
 # Initialisation globale du RAG au démarrage de l'application
 print("--- Initialisation du RAG Multimodal ---")
 
+
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+COLLECTION_NAME = "multimodal_collection"
+UPLOAD_DIR = "data"
+GEMINI_MODEL = "gemini-3.8-flash"
+
+# Connexion au client Qdrant
+client = QdrantClient(url=QDRANT_URL)
+
+# Creation de la collection si elle n'existe pas
+try : 
+    client.get_collection(collection_name=COLLECTION_NAME)
+    print(f"Collection Qdrant {COLLECTION_NAME} trouve")
+except Exception:
+    print(f"Creation de la collection Qdrant {COLLECTION_NAME} ...")
+    client.create_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=VectorParams(size=768, distance=Distance.COSINE) # 768 pour all-mpnet-base-v2
+    )
+
+
 # Initialisation du modele d'embeddings HuggingFace
 embedding = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-mpnet-base-v2",
     encode_kwargs={"normalize_embeddings": True},
 )
 
-# Chargement de la base Chroma
-vectorstore = Chroma(
-    persist_directory="./chroma_multimodal_db",
-    embedding_function=embedding,
+# Chargement de la base Qdrant
+vectorstore = QdrantVectorStore(
+    client=client,
+    collection_name=COLLECTION_NAME,
+    embedding=embedding,
 )
-
-UPLOAD_DIR = "data"
-GEMINI_MODEL = "gemini-3.8-flash"
 
 # Congiguration du modèle LLM
 llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
@@ -73,7 +95,7 @@ def process_and_index_file(pdf_path : str) :
     for doc in docs :
         doc.page_content = f"Document source : {file_name} {doc.page_content}"
 
-    # Ajoute les PDF dans la base ChromaDB
+    # Ajoute les PDF dans la base Qdrant
     vectorstore.add_documents(filter_complex_metadata(docs))
 
     return len(docs)
