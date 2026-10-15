@@ -39,7 +39,7 @@ def run_evaluation() :
 
     print("--- Lancement de l'évalutation ---")
 
-    judge_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash-lite", temperature=0)
+    judge_llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0)
 
     total_score = 0
 

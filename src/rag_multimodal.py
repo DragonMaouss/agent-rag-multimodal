@@ -38,7 +38,7 @@ vectorstore = Chroma(
 )
 
 UPLOAD_DIR = "data"
-GEMINI_MODEL = "gemini-3.5-flash-lite"
+GEMINI_MODEL = "gemini-3.8-flash"
 
 # Congiguration du modèle LLM
 llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
@@ -109,9 +109,9 @@ def get_all_corpus_documents():
     return all_docs
 
 
-def get_rag_chain():
-    """
-    Créer et retourne une chaîne RAG actualisée avec le retriever pointant sur la base
+def get_retriever():
+    """"
+    Construit un retriever avec recherche hybride (vector/semantic) -> Reranker (cross encoder)
     """
     # Retriever Vectoriel 
     vectorstore_retriever = vectorstore.as_retriever(
@@ -143,10 +143,17 @@ def get_rag_chain():
     )
 
     # Retriever final avec le re-ranker et l'ensemble 
-    retriever = ContextualCompressionRetriever(
+    return ContextualCompressionRetriever(
         base_compressor=compressor,
         base_retriever=ensemble_retriever
-    )
+    )    
+
+
+def get_rag_chain():
+    """
+    Retourne une chaîne RAG actualisée avec le retriever pointant sur la base
+    """
+    retriever = get_retriever()
 
     system_prompt = (
         "Vous êtes un assistant expert capable d'analyser à la fois du texte et des descriptions de schémas ou d'images. "
