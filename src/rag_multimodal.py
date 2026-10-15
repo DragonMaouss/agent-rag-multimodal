@@ -9,13 +9,14 @@ from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_classic.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers import ContextualCompressionRetriever, EnsembleRetriever
 from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_docling import DoclingLoader
 from langchain_docling.loader import ExportType
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.output_parsers import StrOutputParser
+from langchain_community.retrievers import BM25Retriever
 
 load_dotenv()
 
@@ -33,6 +34,7 @@ vectorstore = Chroma(
     embedding_function=embedding,
 )
 
+UPLOAD_DIR = "data"
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 # Congiguration du modèle LLM
@@ -80,10 +82,57 @@ def process_and_index_file(pdf_path : str) :
     return len(docs)
 
 
+def get_all_corpus_documents():
+    all_docs = []
+    if os.path.exists(UPLOAD_DIR):
+        for file_name in os.listdir(UPLOAD_DIR):
+            if file_name.endswith(".pdf"):
+                file_path = os.path.join(UPLOAD_DIR, file_name)
+                try :
+                    loader = DoclingLoader(
+                        file_path=file_path,
+                        export_type=ExportType.MARKDOWN
+                    )
+                    raw_docs = loader.load()
+                    
+                    text_splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=1000,
+                        chunk_overlap=200
+                    )
+                    docs = text_splitter.split_documents(raw_docs)
+
+                    for doc in docs :
+                        doc.page_content = f"Document source : {file_name} {doc.page_content}"
+                    all_docs.extend(filter_complex_metadata(docs))
+                except Exception as e:
+                    print(f"Erreur lors du chargement de {file_name} pour BM25 : {e}")
+    return all_docs
+
+
 def get_rag_chain():
     """
     Créer et retourne une chaîne RAG actualisée avec le retriever pointant sur la base
     """
+    # Retriever Vectoriel 
+    vectorstore_retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k":20}
+    )
+
+    # Retriever BM25
+    corpus_docs = get_all_corpus_documents()
+    if corpus_docs:
+        bm25_retriever = BM25Retriever.from_documents(corpus_docs)
+        bm25_retriever.k = 25
+
+        # Ensemble retriever (50/50)
+        ensemble_retriever = EnsembleRetriever(
+            retrievers=[vectorstore_retriever,bm25_retriever],
+            weights=[0.5,0.5]
+        )
+    else :
+        ensemble_retriever = vectorstore_retriever
+    
     # Model de reranking Cross Encoder
     reranker_model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-large")
 
@@ -92,15 +141,10 @@ def get_rag_chain():
         model=reranker_model,
         top_n=5
     )
-    # Retriever de base
-    base_retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k":20}
-    )
 
     retriever = ContextualCompressionRetriever(
         base_compressor=compressor,
-        base_retriever=base_retriever
+        base_retriever=ensemble_retriever
     )
 
     system_prompt = (
