@@ -2,163 +2,282 @@
   {
     "id": 1,
     "question": "Quels sont les trois paradigmes de RAG présentés dans l'article de synthèse de Gao et al. ?",
-    "expected_keywords": ["Naive RAG", "Advanced RAG", "Modular RAG"],
-    "ground_truth": "L'article catégorise l'évolution du RAG en trois grands paradigmes : Naive RAG, Advanced RAG et Modular RAG[cite: 10, 12, 13]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "L'article catégorise l'évolution du RAG en trois grands paradigmes : Naive RAG, Advanced RAG et Modular RAG."
   },
   {
     "id": 2,
     "question": "Quelles sont les limites principales du RAG Naïf (Naive RAG) ?",
-    "expected_keywords": ["precision", "rappel", "hallucination", "bruit"],
-    "ground_truth": "Le RAG Naïf souffre de difficultés de récupération (précision/rappel), de problèmes de génération (hallucinations) et d'obstacles d'augmentation[cite: 12]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Le RAG Naïf souffre de difficultés de récupération (précision/rappel), de problèmes de génération (hallucinations) et d'obstacles d'augmentation."
   },
   {
     "id": 3,
     "question": "Sur quoi se concentre principalement l'Advanced RAG pour améliorer les performances ?",
-    "expected_keywords": ["pre-retrieval", "post-retrieval", "indexation"],
-    "ground_truth": "L'Advanced RAG introduit des optimisations au niveau de l'indexation, ainsi que des stratégies de pré-récupération et de post-récupération[cite: 12, 13]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "L'Advanced RAG introduit des optimisations au niveau de l'indexation, ainsi que des stratégies de pré-récupération et de post-récupération."
   },
   {
     "id": 4,
     "question": "Quels nouveaux modules spécifiques sont introduits par le Modular RAG ?",
-    "expected_keywords": ["Search", "Memory", "Routing", "Predict", "Fusion"],
-    "ground_truth": "Le Modular RAG introduit des modules tels que Search, RAG-Fusion, Memory, Routing, Predict et Task Adapter[cite: 13, 14]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Le Modular RAG introduit des modules tels que Search, RAG-Fusion, Memory, Routing, Predict et Task Adapter."
   },
   {
     "id": 5,
     "question": "Quelle est la différence fondamentale entre le RAG et le Fine-tuning selon l'article ?",
-    "expected_keywords": ["textbook", "interanliser", "dynamique"],
-    "ground_truth": "Le RAG agit comme un manuel de référence externe mis à jour en temps réel, tandis que le Fine-tuning internalise les connaissances de manière statique[cite: 14]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Le RAG agit comme un manuel de référence externe mis à jour en temps réel, tandis que le Fine-tuning internalise les connaissances de manière statique."
   },
   {
     "id": 6,
     "question": "Quel concept de granularité de récupération est introduit par DenseX ?",
-    "expected_keywords": ["propositions", "atomiques"],
-    "ground_truth": "DenseX propose d'utiliser des propositions, définies comme des expressions atomiques encapsulant un segment factuel unique[cite: 17, 18]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "DenseX propose d'utiliser des propositions, définies comme des expressions atomiques encapsulant un segment factuel unique."
   },
   {
     "id": 7,
     "question": "En quoi consiste la méthode HyDE en matière d'optimisation de requête ?",
-    "expected_keywords": ["hypothetical", "documents", "embedding"],
-    "ground_truth": "HyDE construit des documents hypothétiques (réponses simulées) pour effectuer la recherche par similarité d'embedding de réponse à réponse[cite: 19]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "HyDE construit des documents hypothétiques (réponses simulées) pour effectuer la recherche par similarité d'embedding de réponse à réponse."
   },
   {
     "id": 8,
     "question": "Qu'est-ce que le problème du 'Lost in the middle' dans les grands contextes ?",
-    "expected_keywords": ["debut", "fin", "milieu", "oublier"],
-    "ground_truth": "Le problème du 'Lost in the middle' décrit la tendance des LLM à se concentrer sur le début et la fin des longs textes tout en oubliant le milieu[cite: 20]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Le problème du 'Lost in the middle' décrit la tendance des LLM à se concentrer sur le début et la fin des longs textes tout en oubliant le milieu."
   },
   {
     "id": 9,
     "question": "Quels sont les trois types de processus d'augmentation en dehors de la récupération unique ?",
-    "expected_keywords": ["iterative", "recursive", "adaptive"],
-    "ground_truth": "Les trois processus d'augmentation sont l'itération (Iterative), la récursion (Recursive) et l'adaptation (Adaptive)[cite: 20, 21]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Les trois processus d'augmentation sont l'itération (Iterative), la récursion (Recursive) et l'adaptation (Adaptive)."
   },
   {
     "id": 10,
     "question": "Quels sont les trois scores de qualité évalués dans un système RAG ?",
-    "expected_keywords": ["context relevance", "faithfulness", "answer relevance"],
-    "ground_truth": "Les scores de qualité évalués sont la pertinence du contexte (Context Relevance), la fidélité de la réponse (Faithfulness) et la pertinence de la réponse (Answer Relevance)[cite: 22]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Les scores de qualité évalués sont la pertinence du contexte (Context Relevance), la fidélité de la réponse (Faithfulness) et la pertinence de la réponse (Answer Relevance)."
   },
   {
     "id": 11,
     "question": "Quelles sont les quatre capacités requises pour évaluer un système RAG de manière approfondie ?",
-    "expected_keywords": ["noise robustness", "negative rejection", "integration", "counterfactual"],
-    "ground_truth": "Les quatre capacités sont la robustesse au bruit, le rejet négatif, l'intégration d'informations et la robustesse contrefactuelle[cite: 22]."
+    "expected_sources": ["2312.10997v5.pdf"],
+    "ground_truth": "Les quatre capacités sont la robustesse au bruit, le rejet négatif, l'intégration d'informations et la robustesse contrefactuelle."
   },
   {
     "id": 12,
     "question": "Quel est le total général de l'actif du bilan d'ITM Entreprises au 30/06/2026 ?",
-    "expected_keywords": ["8 208 542", "milliers d'euros"],
-    "ground_truth": "Le total général de l'actif d'ITM Entreprises au 30/06/2026 est de 8 208 542 milliers d'euros[cite: 33]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Le total général de l'actif d'ITM Entreprises au 30/06/2026 est de 8 208 542 milliers d'euros."
   },
   {
     "id": 13,
     "question": "Quel est le montant du bénéfice net (résultat de l'exercice) pour ITM Entreprises au 30/06/2026 ?",
-    "expected_keywords": ["161 970", "bénéfice"],
-    "ground_truth": "Le bénéfice net de l'exercice N s'élève à 161 970 milliers d'euros[cite: 34, 35]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Le bénéfice net de l'exercice N s'élève à 161 970 milliers d'euros."
   },
   {
     "id": 14,
     "question": "Quel était le résultat de l'exercice précédent (N-1) pour ITM Entreprises ?",
-    "expected_keywords": ["-75 597", "perte"],
-    "ground_truth": "L'exercice N-1 s'est soldé par une perte de 75 597 milliers d'euros[cite: 34, 35]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "L'exercice N-1 s'est soldé par une perte de 75 597 milliers d'euros."
   },
   {
     "id": 15,
     "question": "Quel est le montant total des capitaux propres d'ITM Entreprises au 30/06/2026 ?",
-    "expected_keywords": ["2 911 229", "capitaux propres"],
-    "ground_truth": "Le total des capitaux propres s'élève à 2 911 229 milliers d'euros[cite: 34]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Le total des capitaux propres s'élève à 2 911 229 milliers d'euros."
   },
   {
     "id": 16,
     "question": "Quel est le montant net des immobilisations incorporelles d'ITM Entreprises au 30/06/2026 ?",
-    "expected_keywords": ["27 924", "incorporelles"],
-    "ground_truth": "Le total net des immobilisations incorporelles est de 27 924 milliers d'euros[cite: 32]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Le total net des immobilisations incorporelles est de 27 924 milliers d'euros."
   },
   {
     "id": 17,
     "question": "Quel est le montant des disponibilités en trésorerie d'ITM Entreprises au 30/06/2026 ?",
-    "expected_keywords": ["1 046 510", "disponibilités"],
-    "ground_truth": "Les disponibilités s'élèvent à 1 046 510 milliers d'euros[cite: 32]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Les disponibilités s'élèvent à 1 046 510 milliers d'euros."
   },
   {
     "id": 18,
     "question": "Quel est le montant total des dettes d'ITM Entreprises au 30/06/2026 ?",
-    "expected_keywords": ["5 274 124", "dettes"],
-    "ground_truth": "Le total des dettes est de 5 274 124 milliers d'euros[cite: 34]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Le total des dettes est de 5 274 124 milliers d'euros."
   },
   {
     "id": 19,
     "question": "Quel est le montant du chiffre d'affaires (production vendue) d'ITM Entreprises à l'exercice N ?",
-    "expected_keywords": ["138 529", "chiffre d'affaires"],
-    "ground_truth": "Le montant net du chiffre d'affaires (production vendue) est de 138 529 milliers d'euros[cite: 35]."
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "ground_truth": "Le montant net du chiffre d'affaires (production vendue) est de 138 529 milliers d'euros."
   },
   {
     "id": 20,
     "question": "Quels sont les trois parcours proposés en M2 Informatique à l'Université Paris Cité ?",
-    "expected_keywords": ["DATA", "IMPAIRS", "LP"],
+    "expected_sources": ["rentreem2_2026web.pdf"],
     "ground_truth": "Les trois parcours du M2 Informatique sont DATA, IMPAIRS et LP."
   },
   {
     "id": 21,
     "question": "Quel est le laboratoire de recherche associé à l'UFR d'informatique ?",
-    "expected_keywords": ["IRIF", "recherche"],
-    "ground_truth": "Le laboratoire de recherche de l'UFR est l'IRIF (Institut de Recherche en Informatique Fondamentale)[cite: 39]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "Le laboratoire de recherche de l'UFR est l'IRIF (Institut de Recherche en Informatique Fondamentale)."
   },
   {
     "id": 22,
     "question": "Qui exerce les fonctions de directeur de l'UFR d'informatique ?",
-    "expected_keywords": ["Giulio Manzonetto"],
-    "ground_truth": "Le directeur de l'UFR est Giulio Manzonetto[cite: 39]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "Le directeur de l'UFR est Giulio Manzonetto."
   },
   {
     "id": 23,
     "question": "Qui est le responsable pédagogique du parcours IMPAIRS et du M2 Informatique ?",
-    "expected_keywords": ["François Laroussinie"],
-    "ground_truth": "Le responsable du M2 et du parcours IMPAIRS est François Laroussinie[cite: 39]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "Le responsable du M2 et du parcours IMPAIRS est François Laroussinie."
   },
   {
     "id": 24,
     "question": "Qui est responsable du parcours DATA en M2 Informatique ?",
-    "expected_keywords": ["Amélie Gheerbrant"],
-    "ground_truth": "La responsable du parcours DATA est Amélie Gheerbrant[cite: 39]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "La responsable du parcours DATA est Amélie Gheerbrant."
   },
   {
     "id": 25,
     "question": "Qui est le responsable du parcours LP en M2 Informatique ?",
-    "expected_keywords": ["Mohamed Foughali"],
-    "ground_truth": "Le responsable du parcours LP est Mohamed Foughali[cite: 39]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "La responsable du parcours LP est Mohamed Foughali."
   },
   {
     "id": 26,
     "question": "Quelle est la durée réglementaire du stage de M2 Informatique ?",
-    "expected_keywords": ["4 mois", "6 mois"],
-    "ground_truth": "La durée du stage est de 4 mois minimum à 6 mois maximum[cite: 43]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "La durée du stage est de 4 mois minimum à 6 mois maximum."
   },
   {
     "id": 27,
     "question": "Quel est le numéro de la salle de détente mise à disposition au sein de l'UFR ?",
-    "expected_keywords": ["1019", "détente"],
-    "ground_truth": "La salle de détente de l'UFR d'informatique porte le numéro 1019[cite: 39]."
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "ground_truth": "La salle de détente de l'UFR d'informatique porte le numéro 1019."
+  },
+  {
+    "id": 28,
+    "question": "Quel est le montant des dettes fournisseurs d'ITM Entreprises comparé au total de ses immobilisations incorporelles au 30/06/2026 ?",
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "expected_keywords": ["56 649", "27 924", "dettes fournisseurs", "incorporelles"],
+    "ground_truth": "Les dettes fournisseurs s'élèvent à 56 649 milliers d'euros et les immobilisations incorporelles nettes à 27 924 milliers d'euros[cite: 32, 34]."
+  },
+  {
+    "id": 29,
+    "question": "Quels sont les points communs et différences d'utilisation entre le module de recherche (Search) et la méthode HyDE dans le Modular RAG ?",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "expected_keywords": ["HyDE", "Search", "documents hypothétiques", "bases de données"],
+    "ground_truth": "HyDE génère des documents hypothétiques pour l'embedding tandis que le module Search permet des requêtes directes sur des moteurs ou bases de données[cite: 17, 19]."
+  },
+  {
+    "id": 30,
+    "question": "Quel est l'horaire exact du cours d'Algorithmique répartie en M2 Data à l'Université Paris Cité ?",
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "expected_keywords": ["Algorithme", "répartie", "L. Blin"],
+    "ground_truth": "Le document indique que l'UE est enseignée par L. Blin (6 ects), mais les horaires précis ne sont pas mentionnés[cite: 9]."
+  },
+  {
+    "id": 31,
+    "question": "Quel est le montant du budget alloué à la recherche pour l'UFR d'informatique en 2026 ?",
+    "expected_sources": [],
+    "expected_keywords": [],
+    "ground_truth": "Information absente des documents fournis (test de rejet négatif)."
+  },
+  {
+    "id": 32,
+    "question": "Quel est le volume des liquidités financières mobilisables immédiatement par ITM Entreprises pour faire face à ses engagements à court terme à la fin du premier semestre 2026 ?",
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "expected_keywords": ["1 046 510", "Disponibilités"],
+    "ground_truth": "Les disponibilités s'élèvent à 1 046 510 milliers d'euros[cite: 36]."
+  },
+  {
+    "id": 33,
+    "question": "Parmi les responsables de parcours du M2 Informatique à Paris Cité, lequel supervise le cursus orienté vers la programmation pour Internet et la répartition ?",
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "expected_keywords": ["François Laroussinie", "IMPAIRS"],
+    "ground_truth": "François Laroussinie est le responsable du parcours IMPAIRS (Information et Mobilité, programmation pour Internet et la Répartition)[cite: 4, 7]."
+  },
+  {
+    "id": 34,
+    "question": "Quelles sont les méthodes d'optimisation de requête qui s'appuient sur l'utilisation de réponses simulées ou de formulations hypothétiques ?",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "expected_keywords": ["HyDE", "hypothetical", "documents"],
+    "ground_truth": "La méthode HyDE (Hypothetical Document Embeddings) construit des documents hypothétiques pour effectuer la recherche[cite: 13, 21]."
+  },
+  {
+    "id": 35,
+    "question": "Quel est le lien hiérarchique et organisationnel entre l'UFR d'informatique et son laboratoire de recherche associé ?",
+    "expected_sources": ["rentreem2_2026web.pdf", "2312.10997v5.pdf"],
+    "expected_keywords": ["IRIF", "laboratoire"],
+    "ground_truth": "L'IRIF (Institut de Recherche en Informatique Fondamentale) est le laboratoire de recherche associé à l'UFR d'informatique[cite: 7]."
+  },
+  {
+    "id": 36,
+    "question": "Quel est le montant total cumulé des charges d'exploitation de l'exercice N pour ITM Entreprises si l'on exclut les salaires et les cotisations sociales ?",
+    "expected_sources": ["2d-20260930_2026_06_itme_bilan_et_compte_resultat.pdf"],
+    "expected_keywords": ["156 951", "10 535", "5 295"],
+    "ground_truth": "Le total des charges d'exploitation est de 156 951 milliers d'euros, dont 10 535 de salaires et 5 295 de cotisations sociales[cite: 38]."
+  },
+  {
+    "id": 37,
+    "question": "Quelles sont les conditions exactes et les interlocuteurs à contacter en cas de problème de mot de passe sur le réseau de l'UFR comparées au signalement d'un cas de harcèlement ?",
+    "expected_sources": ["rentreem2_2026web.pdf"],
+    "expected_keywords": ["Laurent Pietroni", "signalement@u-paris.fr", "Mikaël Rabie"],
+    "ground_truth": "Pour les mots de passe, il faut contacter Laurent Pietroni. Pour les problèmes de harcèlement, le contact est Mikaël Rabie ou signalement@u-paris.fr[cite: 6, 8]."
+  },
+  {
+    "id": 38,
+    "question": "Quel choix a été fait pour l'analogue de la constante de Planck en mécanique gravitationnelle dans le cadre de l'astrophysique quantique ?",
+    "expected_sources": ["QuantumAstophysics3.pdf"],
+    "expected_keywords": ["moment cinétique", "orbite", "constante de Planck"],
+    "ground_truth": "En astrophysique quantique, le choix retenu comme analogue de la constante de Planck est le moment cinétique de l'orbite[cite: 41]."
+  },
+  {
+    "id": 39,
+    "question": "Quelles sont les deux formes de sphérification en cuisine moléculaire et en quoi se distinguent-elles en matière de stabilité ?",
+    "expected_sources": ["la-cuisine-moleculaire-doc-complete.pdf"],
+    "expected_keywords": ["sphérification basique", "sphérification inverse", "stable"],
+    "ground_truth": "Il existe la sphérification basique (qui n'est pas stable dans le temps car la bille finit par se gélifier entièrement) et la sphérification inverse (où la pellicule gélifiée s'épaissit vers l'extérieur, ce qui la rend stable dans le temps)[cite: 56]."
+  },
+  {
+    "id": 40,
+    "question": "Quelle a été la progression du chiffre d'affaires à magasins comparables (LFL) du groupe Carrefour au premier trimestre 2026 ?",
+    "expected_sources": ["Communiqué de presse Carrefour T1 2026.pdf", "Carrefour_Q1 2026 Presentation.pdf"],
+    "expected_keywords": ["+2,2%", "comparable", "LFL", "T1 2026"],
+    "ground_truth": "Au premier trimestre 2026, le chiffre d'affaires du groupe Carrefour a enregistré une croissance de +2,2% en comparable (LFL)[cite: 165, 178]."
+  },
+  {
+    "id": 41,
+    "question": "Selon la charte de l'UFR d'informatique, quel est le cadre d'usage de l'intelligence artificielle générative pour les étudiant-e-s en l'absence d'autorisation ?",
+    "expected_sources": ["charteia_v1.pdf"],
+    "expected_keywords": ["strictement interdit", "autorisation explicite", "enseignant-e-s"],
+    "ground_truth": "Sauf autorisation explicite des enseignant-e-s, l'usage de l'IA générative est strictement interdit dans le cadre de tous les enseignements (devoirs maison, projets, TP, etc.)[cite: 190]."
+  },
+  {
+    "id": 42,
+    "question": "Dans le cadre d'un projet universitaire en informatique étudiant les résultats financiers de Carrefour, l'utilisation de l'IA générative pour rédiger l'analyse du chiffre d'affaires du T1 2026 est-elle autorisée par défaut ?",
+    "expected_sources": ["charteia_v1.pdf", "Communiqué de presse Carrefour T1 2026.pdf"],
+    "expected_keywords": ["strictement interdit", "autorisation explicite", "+2,2%"],
+    "ground_truth": "Non, selon la charte de l'UFR d'informatique, l'usage de l'IA générative est strictement interdit sans autorisation explicite des enseignant-e-s, indépendamment du fait que le sujet traité porte sur des données réelles comme la croissance de +2,2% de Carrefour[cite: 165, 190]."
+  },
+  {
+    "id": 43,
+    "question": "Pourquoi la sphérification basique est-elle la méthode idéale et stable pour conserver des billes de saveur sur une longue période ?",
+    "expected_sources": ["la-cuisine-moleculaire-doc-complete.pdf"],
+    "expected_keywords": ["piège", "instable", "sphérification inverse", "gélification entière"],
+    "ground_truth": "C'est un piège : la prémisse est fausse. La sphérification basique n'est pas stable dans le temps car la bille finit par se gélifier entièrement. C'est la sphérification inverse qui assure la stabilité à long terme[cite: 56]."
+  },
+  {
+    "id": 44,
+    "question": "De quelle manière le moment cinétique de l'orbite utilisé en astrophysique quantique impacte-t-il la progression de +2,2% du chiffre d'affaires de Carrefour ?",
+    "expected_sources": ["QuantumAstophysics3.pdf", "Communiqué de presse Carrefour T1 2026.pdf"],
+    "expected_keywords": ["aucun rapport", "domaines distincts", "aberrant"],
+    "ground_truth": "Il s'agit d'une question piège multi-saut non corrélée : le choix du moment cinétique de l'orbite comme analogue de la constante de Planck n'a aucun lien avec la performance financière de Carrefour au premier trimestre 2026[cite: 41, 165]."
   }
 ]
