@@ -18,11 +18,14 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.retrievers import BM25Retriever
 
+
+# Chargement des variables d'environnement
 load_dotenv()
 
 # Initialisation globale du RAG au démarrage de l'application
 print("--- Initialisation du RAG Multimodal ---")
 
+# Initialisation du modele d'embeddings HuggingFace
 embedding = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-mpnet-base-v2",
     encode_kwargs={"normalize_embeddings": True},
@@ -41,9 +44,9 @@ GEMINI_MODEL = "gemini-3.5-flash-lite"
 llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
 
 
-def extract_pdf_multimodal(pdf_path : str) :
+def process_and_index_file(pdf_path : str) :
     """
-    Extrait le texte et les images d'un PDF, puis décrit les images avec Gemini Vision
+    Extrait le contenu d'un ficher PDF au format Markdown, decoupe en chunks, enrichis les metatdonnes et les ajoute dans la base ChromaDB.
     """
     if not os.path.exists(pdf_path):
         print(f"Le fichier {pdf_path} n'existe pas.")
@@ -51,38 +54,35 @@ def extract_pdf_multimodal(pdf_path : str) :
 
     print(f"Analyse du PDF avec Dockling : {pdf_path} ...")
 
+    # Chargement du PDF avec Docling au format Markdown
     loader = DoclingLoader(
         file_path=pdf_path,
         export_type=ExportType.MARKDOWN
     )
     raw_docs = loader.load()
 
+    # Decoupage en chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200
     )
     docs = text_splitter.split_documents(raw_docs)
 
+    # Préfixe chaque chunk avec le nom du ficher pour garder le contexte
     file_name = os.path.basename(pdf_path)
     for doc in docs :
         doc.page_content = f"Document source : {file_name} {doc.page_content}"
 
-    return filter_complex_metadata(docs)
+    # Ajoute les PDF dans la base ChromaDB
+    vectorstore.add_documents(filter_complex_metadata(docs))
 
-
-def process_and_index_file(pdf_path : str) :
-    """
-    Extrait, découpe et ajoute les documents du PDF dans la base Chroma existante.
-    """
-    docs = extract_pdf_multimodal(pdf_path=pdf_path)
-    if not docs :
-        return 0
-
-    vectorstore.add_documents(docs)
     return len(docs)
 
 
 def get_all_corpus_documents():
+    """
+    Parcourt le dossier d'upload et charge tout les PDF pour BM25
+    """
     all_docs = []
     if os.path.exists(UPLOAD_DIR):
         for file_name in os.listdir(UPLOAD_DIR):
@@ -142,6 +142,7 @@ def get_rag_chain():
         top_n=5
     )
 
+    # Retriever final avec le re-ranker et l'ensemble 
     retriever = ContextualCompressionRetriever(
         base_compressor=compressor,
         base_retriever=ensemble_retriever
@@ -171,6 +172,9 @@ def get_rag_chain():
 
 
 def rewrite_query(user_query: str):
+    """
+    Reecrit la requete de l'utilisateur pour l'optimiser avant la requete
+    """
     rewrite_prompt = ChatPromptTemplate.from_messages([
         ("system", "Vous êtes un expert en recherche documentaire. "
                    "Votre rôle est de réécrire la question de l'utilisateur pour qu'elle soit claire, "

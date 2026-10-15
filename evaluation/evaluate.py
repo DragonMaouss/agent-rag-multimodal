@@ -6,12 +6,17 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
+
+# Chargement des variables d'environnement
 load_dotenv()
 
 API_URL = "http://127.0.0.1:8000/query"
 DATASET_PATH = "evaluation/golden_dataset.json"
 
 def check_keywords(response: str, expected_keywords: list, threshold: float) :
+    """
+    Verifie si la reponse passe le threshold de mot cles presents.
+    """
     if not expected_keywords :
         return True
 
@@ -22,6 +27,9 @@ def check_keywords(response: str, expected_keywords: list, threshold: float) :
 
 
 def run_evaluation() :
+    """"
+    Evaluation sur "golden_dataset.json" avec un filtre par mot cles et une note par un LLM (1 a 5).
+    """
     if not os.path.exists(DATASET_PATH):
         print(f"Erreur : le fichier {DATASET_PATH} est introuvable.")
         return

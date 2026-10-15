@@ -6,8 +6,10 @@ from typing import List, Optional
 from src.rag_multimodal import process_and_index_file, get_rag_chain, rewrite_query
 
 
+# Chargement des variables d'environnement
 load_dotenv()
 
+# Initialisation de l'application FastAPI
 app = FastAPI(
     title="Agent RAG Multimodal API",
     description="API pour l'Agent RAG Multimodal utilisant FastAPI, LangChain et Qdrant.",
@@ -38,6 +40,7 @@ class QueryResponse(BaseModel):
     answer: str
     sources: List[SourceInfo]
 
+
 @app.get("/")
 def read_root():
     return {"message": "Bienvenue sur l'API de l'Agent RAG Multimodal. Utilisez le point de terminaison /query pour poser vos questions."}
@@ -45,12 +48,16 @@ def read_root():
 
 @app.post("/upload")
 async def upload_pdf(file : UploadFile = File(...)) :
+    """
+    Endpoint de telechargement et d'indexation d'un fichier PDF
+    """
     try :
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         contents = await file.read()
         with open(file_path, "wb") as f :
             f.write(contents)
 
+        # Indexation dans ChromaDB
         num_docs = process_and_index_file(file_path)
         return {"filename" : file.filename, "message" : f"Fichier indexé avec succès ({num_docs} éléments extraits)."}
     except Exception as e :
@@ -59,6 +66,9 @@ async def upload_pdf(file : UploadFile = File(...)) :
 
 @app.post("/query", response_model=QueryResponse)
 def query_rag(request: QueryRequest):
+    """
+    Endpoint principal permettant de poser une question a l'agent RAG.
+    """
     try : 
         if not request.query.strip():
             raise HTTPException(status_code=400, detail="La requête ne peut pas être vide.")

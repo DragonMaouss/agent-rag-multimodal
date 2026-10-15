@@ -1,4 +1,5 @@
 services:
+  # Backend (API FastAPI)
   api:
     build: .
     container_name: rag_fastapi_backend
@@ -7,10 +8,11 @@ services:
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
-      - ./chroma_multimodal_db:/app/chroma_multimodal_db
-      - ./data:/app/data
+      - ./chroma_multimodal_db:/app/chroma_multimodal_db # Base de donnes vectorielle
+      - ./data:/app/data # Documents PDF
     command: uvicorn src.api:app --host 0.0.0.0 --port 8000
 
+  # Frontend (Interface Streamlit)
   streamlit : 
     build: .
     container_name: rag_streamlit_frontend
