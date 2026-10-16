@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import List, Optional
@@ -48,7 +48,7 @@ def read_root():
 
 
 @app.post("/upload")
-async def upload_pdf(file : UploadFile = File(...)) :
+async def upload_pdf(file : UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()) :
     """
     Endpoint de telechargement et d'indexation d'un fichier PDF
     """
@@ -58,9 +58,10 @@ async def upload_pdf(file : UploadFile = File(...)) :
         with open(file_path, "wb") as f :
             f.write(contents)
 
-        # Indexation dans ChromaDB
-        num_docs = process_and_index_file(file_path)
-        return {"filename" : file.filename, "message" : f"Fichier indexé avec succès ({num_docs} éléments extraits)."}
+        # Traitement asynchrone des documents
+        background_tasks.add_task(process_and_index_file, file_path)
+
+        return {"filename" : file.filename, "message" : f"Fichier {file.filename} reçu et en cours d'indexation en arrière-plan."}
     except Exception as e :
         raise HTTPException(status_code=500, detail=str(e))
 
