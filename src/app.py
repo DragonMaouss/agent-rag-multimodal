@@ -73,7 +73,11 @@ if prompt:
         with st.chat_message("assistant") :
             with st.spinner("L'agent RAG Multimodal réfléchit..."):
                 try : 
-                    reponse = requests.post(f"{API_URL}/query", json={"query": user_text})
+                    payload = {
+                        "query" : user_text,
+                        "chat_history" : st.session_state.messages[:-1]
+                    }
+                    reponse = requests.post(f"{API_URL}/query", json=payload)
                     if reponse.status_code == 200:
                         data = reponse.json()
                         answer = data.get("answer", "Aucune réponse trouvée.")

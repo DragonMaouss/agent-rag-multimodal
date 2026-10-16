@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_classic.chains import create_retrieval_chain
+from langchain_classic.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -16,6 +16,7 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.retrievers import BM25Retriever
 from langchain_qdrant import QdrantVectorStore
+from langchain_core.prompts import MessagesPlaceholder
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 
@@ -171,21 +172,40 @@ def get_retriever():
 
 def get_rag_chain():
     """
-    Retourne une chaîne RAG actualisée avec le retriever pointant sur la base
+    Retourne une chaîne RAG integrant l'historique de conversation
     """
     retriever = get_retriever()
+
+    contextualize_q_system_prompt = (
+        "Étant donné un historique de chat et la dernière question de l'utilisateur "
+        "qui pourrait faire référence à des contextes précédents dans l'historique, "
+        "formulez une question autonome qui peut être comprise sans l'historique. "
+        "Ne répondez pas à la question, reformulez-la simplement si nécessaire ou renvoyez-la telle quelle."
+    )
+
+    contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", contextualize_q_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}")
+        ]
+    )
+
+    histoy_aware_retriever = create_history_aware_retriever(
+        llm, retriever, contextualize_q_prompt
+    )
 
     system_prompt = (
         "Vous êtes un assistant expert capable d'analyser à la fois du texte et des descriptions de schémas ou d'images. "
         "Répondez aux questions en vous basant uniquement sur le contexte fourni ci-dessous.\n\n"
         "{context}"
     )
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}")
-        ]
-    )
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}"),
+    ])
 
     question_answer_chain = create_stuff_documents_chain(
         llm=llm,
@@ -193,7 +213,7 @@ def get_rag_chain():
     )
 
     return create_retrieval_chain(
-        retriever=retriever,
+        retriever=histoy_aware_retriever,
         combine_docs_chain=question_answer_chain
     )
 

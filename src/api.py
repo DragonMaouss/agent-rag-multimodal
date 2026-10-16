@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import List, Optional
 from src.rag_multimodal import process_and_index_file, get_rag_chain, rewrite_query
-
+from langchain_core.messages import HumanMessage, AIMessage
 
 # Chargement des variables d'environnement
 load_dotenv()
@@ -34,6 +34,7 @@ class SourceInfo(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str
+    chat_history : Optional[List[dict]] = None
 
 class QueryResponse(BaseModel):
     question: str
@@ -72,10 +73,23 @@ def query_rag(request: QueryRequest):
     try : 
         if not request.query.strip():
             raise HTTPException(status_code=400, detail="La requête ne peut pas être vide.")
+
+        # Transformation de l'historation en langchain
+        langchain_history = []
+        if request.chat_history :
+            for msg in request.chat_history:
+                if msg["role"] == "user":
+                    langchain_history.append(HumanMessage(content=msg["content"]))
+                else:
+                    langchain_history.append(AIMessage(content=msg["content"]))
+
         
         # Exécution de la chaîne RAG
         optimized_request = rewrite_query(request.query)
-        response = rag_chain.invoke({"input": optimized_request})
+        response = rag_chain.invoke({
+            "input": optimized_request,
+            "chat_history" : langchain_history
+        })
 
         # Extraction des sources
         sources_list = []
