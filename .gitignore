@@ -13,6 +13,5 @@ __pycache__/
 .vscode/
 .DS_Store
 
-# Base de données Chroma
-chroma_db/
-chroma_multimodal_db
+# Base de données Qdrant
+qdrant_storage
