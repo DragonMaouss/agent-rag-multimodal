@@ -17,6 +17,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_community.retrievers import BM25Retriever
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import MessagesPlaceholder
+from langchain_experimental.text_splitter import SemanticChunker
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 
@@ -54,6 +55,12 @@ embedding = HuggingFaceEmbeddings(
     encode_kwargs={"normalize_embeddings": True},
 )
 
+# Initialisation du decoupeur semantique adaptatif 
+semantic_splitter = SemanticChunker(
+    embeddings=embedding,
+    breakpoint_threshold_type="percentile"
+)
+
 # Chargement de la base Qdrant
 vectorstore = QdrantVectorStore(
     client=client,
@@ -82,12 +89,7 @@ def process_and_index_file(pdf_path : str) :
     )
     raw_docs = loader.load()
 
-    # Decoupage en chunks
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
-    docs = text_splitter.split_documents(raw_docs)
+    docs = semantic_splitter.split_documents(raw_docs)
 
     # Préfixe chaque chunk avec le nom du ficher pour garder le contexte
     file_name = os.path.basename(pdf_path)
@@ -116,11 +118,7 @@ def get_all_corpus_documents():
                     )
                     raw_docs = loader.load()
                     
-                    text_splitter = RecursiveCharacterTextSplitter(
-                        chunk_size=1000,
-                        chunk_overlap=200
-                    )
-                    docs = text_splitter.split_documents(raw_docs)
+                    docs = semantic_splitter.split_documents(raw_docs)
 
                     for doc in docs :
                         doc.page_content = f"Document source : {file_name} {doc.page_content}"

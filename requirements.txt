@@ -7,6 +7,7 @@ langchain-docling
 langchain-google-genai
 langchain_huggingface
 langchain-qdrant
+langchain-experimental
 sentence-transformers
 pydantic
 python-dotenv
