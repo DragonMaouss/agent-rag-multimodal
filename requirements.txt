@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+langsmith
 langchain
 langchain-classic
 langchain-community

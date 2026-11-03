@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langsmith import traceable
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_classic.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
@@ -71,7 +71,7 @@ vectorstore = QdrantVectorStore(
 # Congiguration du modèle LLM
 llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
 
-
+@traceable(name="INDEX_FILE", tags=["ingestion"])
 def process_and_index_file(pdf_path : str) :
     """
     Extrait le contenu d'un ficher PDF au format Markdown, decoupe en chunks, enrichis les metatdonnes et les ajoute dans la base ChromaDB.
@@ -215,7 +215,7 @@ def get_rag_chain():
         combine_docs_chain=question_answer_chain
     )
 
-
+@traceable(name="REWRITE_QUERY", tags=["optimization"])
 def rewrite_query(user_query: str):
     """
     Reecrit la requete de l'utilisateur pour l'optimiser avant la requete

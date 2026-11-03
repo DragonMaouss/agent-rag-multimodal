@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from typing import List, Optional
 from src.rag_multimodal import process_and_index_file, get_rag_chain, rewrite_query
 from langchain_core.messages import HumanMessage, AIMessage
+from langsmith import traceable
 
 # Chargement des variables d'environnement
 load_dotenv()
@@ -67,6 +68,7 @@ async def upload_pdf(file : UploadFile = File(...), background_tasks: Background
 
 
 @app.post("/query", response_model=QueryResponse)
+@traceable(name="API_QUERY_ENDPOINT", tags=["production", "api-query"])
 def query_rag(request: QueryRequest):
     """
     Endpoint principal permettant de poser une question a l'agent RAG.
