@@ -1,4 +1,5 @@
 import os
+import uuid
 from dotenv import load_dotenv
 
 from langsmith import traceable
@@ -18,8 +19,11 @@ from langchain_community.retrievers import BM25Retriever
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import MessagesPlaceholder
 from langchain_experimental.text_splitter import SemanticChunker
+from langchain_core.documents import Document
+
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
+from qdrant_client.models import PointStruct
 
 
 # Chargement des variables d'environnement
@@ -31,8 +35,12 @@ print("--- Initialisation du RAG Multimodal ---")
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 COLLECTION_NAME = "multimodal_collection"
+CACHE_COLLECTION_NAME = "semantic_cache_collection"
+STAGING_COLLECTION_NAME = "query_frequency_collection"
+MIN_FREQUENCY_THRESHOLD = 3
+CACHE_SIMILARITY_THRESHOLD = 0.97
 UPLOAD_DIR = "data"
-GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 # Connexion au client Qdrant
 client = QdrantClient(url=QDRANT_URL)
@@ -48,6 +56,25 @@ except Exception:
         vectors_config=VectorParams(size=768, distance=Distance.COSINE) # 768 pour all-mpnet-base-v2
     )
 
+# Creation de la collection cache si elle n'existe pas
+try:
+    client.get_collection(collection_name=CACHE_COLLECTION_NAME)
+    print(f"Collection Cache Qdrant {CACHE_COLLECTION_NAME} trouvée")
+except Exception:
+    print(f"Création de la collection Cache Qdrant {CACHE_COLLECTION_NAME}...")
+    client.create_collection(
+        collection_name=CACHE_COLLECTION_NAME,
+        vectors_config=VectorParams(size=768, distance=Distance.COSINE)
+    )
+
+try:
+    client.get_collection(collection_name=STAGING_COLLECTION_NAME)
+    print(f"Collection Staging {STAGING_COLLECTION_NAME} trouvée.")
+except Exception:
+    client.create_collection(
+        collection_name=STAGING_COLLECTION_NAME,
+        vectors_config=VectorParams(size=768, distance=Distance.COSINE)
+    )
 
 # Initialisation du modele d'embeddings HuggingFace
 embedding = HuggingFaceEmbeddings(
@@ -70,6 +97,160 @@ vectorstore = QdrantVectorStore(
 
 # Congiguration du modèle LLM
 llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
+
+
+@traceable(name="TRACK_QUERY_FREQUENCY", tags=["cache"])
+def track_query_frequency(user_query: str) -> int:
+    """
+    Vérifie si la question (ou sa reformulation sémantique) a déjà été posée.
+    Incrémente son compteur et retourne la fréquence totale.
+    """
+    try:
+        query_vector = embedding.embed_query(user_query)
+
+        # Recherche de questions similaires dans le staging
+        if hasattr(client, "query_points"):
+            response = client.query_points(
+                collection_name=STAGING_COLLECTION_NAME,
+                query=query_vector,
+                limit=1,
+                score_threshold=0.95
+            )
+            results = response.points
+        else:
+            results = client.search(
+                collection_name=STAGING_COLLECTION_NAME,
+                query_vector=query_vector,
+                limit=1,
+                score_threshold=0.95
+            )
+
+        if results:
+            hit = results[0]
+            current_count = hit.payload.get("hit_count", 1) + 1
+            point_id = hit.id
+
+            # Mise à jour du compteur dans le staging
+            client.set_payload(
+                collection_name=STAGING_COLLECTION_NAME,
+                payload={"hit_count": current_count},
+                points=[point_id]
+            )
+            return current_count
+        else:
+            # Premier passage : ajout au staging avec hit_count = 1
+            point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_query))
+            client.upsert(
+                collection_name=STAGING_COLLECTION_NAME,
+                points=[
+                    PointStruct(
+                        id=point_id,
+                        vector=query_vector,
+                        payload={
+                            "query": user_query,
+                            "hit_count": 1
+                        }
+                    )
+                ]
+            )
+            return 1
+
+    except Exception as e:
+        print(f"[STAGING] Erreur suivi fréquence : {e}")
+        return 1
+    
+
+@traceable(name="CHECK_SEMANTIC_CACHE", tags=["cache"])
+def check_semantic_cache(user_query: str):
+    """
+    Recherche dans Qdrant une question déjà posée sémantiquement similaire.
+    """
+    query_vector = embedding.embed_query(user_query)
+    
+    # Prise en charge des nouvelles versions (query_points) et anciennes (search) de qdrant-client
+    if hasattr(client, "query_points"):
+        response = client.query_points(
+            collection_name=CACHE_COLLECTION_NAME,
+            query=query_vector,
+            limit=1,
+            score_threshold=CACHE_SIMILARITY_THRESHOLD
+        )
+        results = response.points
+    else:
+        results = client.search(
+            collection_name=CACHE_COLLECTION_NAME,
+            query_vector=query_vector,
+            limit=1,
+            score_threshold=CACHE_SIMILARITY_THRESHOLD
+        )
+
+    if results:
+        hit = results[0]
+        payload = hit.payload
+        return {
+            "question": user_query,
+            "answer": payload.get("answer"),
+            "sources": payload.get("sources", []),
+            "cache_hit": True,
+            "similarity_score": float(hit.score)
+        }
+    return None
+
+
+@traceable(name="STORE_SEMANTIC_CACHE", tags=["cache"])
+def store_in_semantic_cache(user_query: str, answer: str, sources: list):
+    """
+    Stocke le vecteur de la question et la réponse générée dans le cache.
+    """
+    query_vector = embedding.embed_query(user_query)
+    point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_query))
+    
+    client.upsert(
+        collection_name=CACHE_COLLECTION_NAME,
+        points=[
+            PointStruct(
+                id=point_id,
+                vector=query_vector,
+                payload={
+                    "query": user_query,
+                    "answer": answer,
+                    "sources": sources
+                }
+            )
+        ]
+    )
+
+
+@traceable(name="PRUNE_CONTEXT", tags=["optimization", "pruning"])
+def prune_context(docs: list[Document], query: str, max_sentences_per_chunk: int = 3) -> list[Document]:
+    """
+    Élimine le bruit à l'intérieur des chunks retenus en ne gardant que 
+    les phrases ayant la plus forte similarité sémantique avec la requête.
+    """
+    if not docs:
+        return []
+
+    query_words = set(query.lower().split())
+    pruned_docs = []
+
+    for doc in docs:
+        sentences = [s.strip() for s in doc.page_content.split('.') if len(s.strip()) > 15]
+        if len(sentences) <= max_sentences_per_chunk:
+            pruned_docs.append(doc)
+            continue
+
+        scored = []
+        for s in sentences:
+            score = sum(1 for w in s.lower().split() if w in query_words)
+            scored.append((score, s))
+
+        top_sentences = set(s for _, s in sorted(scored, key=lambda x: x[0], reverse=True)[:max_sentences_per_chunk])
+        pruned_text = ". ".join([s for s in sentences if s in top_sentences]) + "."
+
+        pruned_docs.append(Document(page_content=pruned_text, metadata=doc.metadata))
+
+    return pruned_docs
+
 
 @traceable(name="INDEX_FILE", tags=["ingestion"])
 def process_and_index_file(pdf_path : str) :

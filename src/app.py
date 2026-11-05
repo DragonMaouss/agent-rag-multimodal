@@ -75,7 +75,7 @@ if prompt:
                 try : 
                     payload = {
                         "query" : user_text,
-                        "chat_history" : st.session_state.messages[:-1]
+                        "chat_history" : st.session_state.messages[-5: -1] if len(st.session_state.messages) > 1 else [] 
                     }
                     reponse = requests.post(f"{API_URL}/query", json=payload)
                     if reponse.status_code == 200:

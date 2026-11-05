@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import List, Optional
-from src.rag_multimodal import process_and_index_file, get_rag_chain, rewrite_query
+from src.rag_multimodal import MIN_FREQUENCY_THRESHOLD, check_semantic_cache, process_and_index_file, get_rag_chain, prune_context, rewrite_query, store_in_semantic_cache, track_query_frequency
 from langchain_core.messages import HumanMessage, AIMessage
 from langsmith import traceable
 
@@ -77,6 +77,14 @@ def query_rag(request: QueryRequest):
         if not request.query.strip():
             raise HTTPException(status_code=400, detail="La requête ne peut pas être vide.")
 
+        # Vérification du cache sémantique pour les questions précédemment posées
+        if not request.chat_history:
+            cached_response = check_semantic_cache(request.query)
+            if cached_response:
+                return cached_response
+
+        query_hits = track_query_frequency(request.query)
+            
         # Transformation de l'historation en langchain
         langchain_history = []
         if request.chat_history :
@@ -94,11 +102,14 @@ def query_rag(request: QueryRequest):
             "chat_history" : langchain_history
         })
 
+        raw_docs = response.get("context", [])
+        pruned_docs = prune_context(raw_docs, query=optimized_request)
+
         # Extraction des sources
         sources_list = []
         seen = set()
 
-        for doc in response.get("context", []):
+        for doc in pruned_docs:
             metadata = doc.metadata
             source_file = os.path.basename(metadata.get("source","Inconnu"))
             page_num = metadata.get("page",1)
@@ -114,10 +125,17 @@ def query_rag(request: QueryRequest):
                     "image_index" : img_idx
                 })
 
+        answer = response["answer"]
+
+        # Stockage dans le cache semantique si la reponse est valide
+        if not request.chat_history and answer and query_hits >= MIN_FREQUENCY_THRESHOLD:
+            store_in_semantic_cache(request.query, answer, sources_list)
+
         return {
             "question": request.query,
             "answer": response["answer"],
-            "sources": sources_list
+            "sources": sources_list,
+            "cache_hit": False
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
