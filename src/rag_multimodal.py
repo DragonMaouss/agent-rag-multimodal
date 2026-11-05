@@ -135,14 +135,14 @@ def get_retriever():
     # Retriever Vectoriel 
     vectorstore_retriever = vectorstore.as_retriever(
         search_type="similarity",
-        search_kwargs={"k":20}
+        search_kwargs={"k":15}
     )
 
     # Retriever BM25
     corpus_docs = get_all_corpus_documents()
     if corpus_docs:
         bm25_retriever = BM25Retriever.from_documents(corpus_docs)
-        bm25_retriever.k = 25
+        bm25_retriever.k = 15
 
         # Ensemble retriever (50/50)
         ensemble_retriever = EnsembleRetriever(
@@ -153,12 +153,12 @@ def get_retriever():
         ensemble_retriever = vectorstore_retriever
     
     # Model de reranking Cross Encoder
-    reranker_model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-large")
+    reranker_model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
 
     # Compresseur qui retient les top_n documents les plus pertinants
     compressor = CrossEncoderReranker(
         model=reranker_model,
-        top_n=5
+        top_n=3
     )
 
     # Retriever final avec le re-ranker et l'ensemble 
