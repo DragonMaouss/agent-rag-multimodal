@@ -10,6 +10,8 @@ from langsmith import traceable
 # Chargement des variables d'environnement
 load_dotenv()
 
+SUPPORTED_EXTENSIONS = (".pdf", ".docx", ".pptx", ".xlsx", ".html", ".md")
+
 # Initialisation de l'application FastAPI
 app = FastAPI(
     title="Agent RAG Multimodal API",
@@ -54,6 +56,13 @@ async def upload_pdf(file : UploadFile = File(...), background_tasks: Background
     Endpoint de telechargement et d'indexation d'un fichier PDF
     """
     try :
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in SUPPORTED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Format '{file_ext}' non pris en charge. Formats acceptés : {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
+            )
+        
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         contents = await file.read()
         with open(file_path, "wb") as f :

@@ -29,7 +29,7 @@ for message in st.session_state.messages:
 prompt = st.chat_input(
     "Posez votre question ici...",
     accept_file=True,
-    file_type=["pdf"]
+    file_type=["pdf", "docx", "pptx", "xlsx", "html", "md"]
 )
 
 # Saisir une question
@@ -47,7 +47,8 @@ if prompt:
                 st.markdown(file_indicator)
 
             with st.spinner(f"Extraction du texte, des images et indexation de {uploaded_file.name} ...") :
-                files = {"file" : (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
+                mime_type = uploaded_file.type or "application/octet-stream"
+                files = {"file": (uploaded_file.name, uploaded_file.getvalue(), mime_type)}
                 try : 
                     res = requests.post(f"{API_URL}/upload", files=files)
                     if res.status_code == 200 :

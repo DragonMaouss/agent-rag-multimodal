@@ -41,6 +41,7 @@ MIN_FREQUENCY_THRESHOLD = 3
 CACHE_SIMILARITY_THRESHOLD = 0.97
 UPLOAD_DIR = "data"
 GEMINI_MODEL = "gemini-3.5-flash-lite"
+SUPPORTED_EXTENSIONS = (".pdf", ".docx", ".pptx", ".xlsx", ".html", ".md")
 
 # Connexion au client Qdrant
 client = QdrantClient(url=QDRANT_URL)
@@ -253,19 +254,22 @@ def prune_context(docs: list[Document], query: str, max_sentences_per_chunk: int
 
 
 @traceable(name="INDEX_FILE", tags=["ingestion"])
-def process_and_index_file(pdf_path : str) :
+def process_and_index_file(file_path : str) :
     """
-    Extrait le contenu d'un ficher PDF au format Markdown, decoupe en chunks, enrichis les metatdonnes et les ajoute dans la base ChromaDB.
+    Extrait le contenu d'un ficher au format Markdown, decoupe en chunks, enrichis les metatdonnes et les ajoute dans la base.
     """
-    if not os.path.exists(pdf_path):
-        print(f"Le fichier {pdf_path} n'existe pas.")
-        return []
+    if not os.path.exists(file_path):
+        print(f"Le fichier {file_path} n'existe pas.")
+        return 0
 
-    print(f"Analyse du PDF avec Dockling : {pdf_path} ...")
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        print(f"Format non supporté : {ext}")
+        return 0
 
-    # Chargement du PDF avec Docling au format Markdown
+    # Chargement du fichier avec Docling au format Markdown
     loader = DoclingLoader(
-        file_path=pdf_path,
+        file_path=file_path,
         export_type=ExportType.MARKDOWN
     )
     raw_docs = loader.load()
@@ -273,7 +277,7 @@ def process_and_index_file(pdf_path : str) :
     docs = semantic_splitter.split_documents(raw_docs)
 
     # Préfixe chaque chunk avec le nom du ficher pour garder le contexte
-    file_name = os.path.basename(pdf_path)
+    file_name = os.path.basename(file_path)
     for doc in docs :
         doc.page_content = f"Document source : {file_name} {doc.page_content}"
 
@@ -290,7 +294,7 @@ def get_all_corpus_documents():
     all_docs = []
     if os.path.exists(UPLOAD_DIR):
         for file_name in os.listdir(UPLOAD_DIR):
-            if file_name.endswith(".pdf"):
+            if file_name.endswith(SUPPORTED_EXTENSIONS):
                 file_path = os.path.join(UPLOAD_DIR, file_name)
                 try :
                     loader = DoclingLoader(
