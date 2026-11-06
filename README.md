@@ -1,49 +1,49 @@
 # Multimodal RAG Agent 
 
-Application RAG (Retrieval-Augmented Generation) multimodale pour l'analyse et l'interrogation de documents complexes (PDF, schémas, tableaux, Markdown).
+Application RAG (Retrieval-Augmented Generation) multimodale pour l'analyse  l'indexation et l'interrogation de documents complexes (PDF, Word `.docx`, PowerPoint `.pptx`, Excel `.xlsx`, HTML `.html`, Markdown `.md`).
 
 ## Fonctionnalités Clés
 
-- Multimodalité : Extraction et traitement du contenu des documents PDF au format Markdown via `Docling`.
-- Recherche Hybride : Couplage de la recherche vectorielle sémantique et de la recherche textuelle par BM25.
-- Re-Classement (Re-ranking) : Intégration d'un modèle Cross-Encoder pour affiner, filtrer et trier les documents les plus pertinents avant la soumission au LLM.
-- Réécriture et contextualisation des requêtes : Reformulation automatique des questions de l'utilisateur en tenant compte de l'historique de conversation pour optimiser la recherche.
-- Mémoire conversationnelle : Gestion d'un historique de dialogue persistant pour traiter les questions suivi.
-- Indexation vectorielle de productio : Migration vers **Qdrant** pour le stockage et la recherche vectorielle haure performance.
-- Evaluation : Scripts dédiés à l'évaluation de la qualité du retrieval (Hit Rate, MRR, MAP, NDCG) et des réponses générées sur un golden dataset.
-- Architecture API : Backend asynchrone avec **FastAPI** avec prise en charge de l'indexation de fichiers en arrière-plan.
-- Interface Web : Application interactive fait avec **Strealit** permettant le chat et l'upload de fichiers PDF.
-- Conteneurisation : Orchestration via **Docker**.
+- **Multimodalité** : Extraction et traitement au format Markdown via `Docling` pour tous les formats bureautiques et techniques courants.
+- **Recherche Hybride** : Couplage de la recherche vectorielle sémantique **Qdrant** et de la recherche textuelle par mots-clés **BM25**.
+- **Re-Classement (Re-ranking)** : Filtrage et tri de précision via un modèle Cross-Encoder (`BAAI/bge-reranker-base`) pour ne soumettre au LLM que les extraits les plus pertinents.
+- **Chunking Adaptatif Sémantique** : Découpage intelligent du texte basé sur les ruptures de cohérence sémentique (`SemanticChunker`). 
+- **Pruning de Contexte** : Elimination du bruit au niveau de la phrase pour réduire l'utilisation de jetons et maximiser la précision des réponses. 
+- **Cashe Sémantique Vectoriel et Suive de Fréquence** : Stockage et réutilisation automatique des réponses des questions fréquemment posées. 
+- **Réécriture et Contextualisation des Eequêtes** : Reformulation automatique des questions de l'utilisateur en tenant compte de l'historique de conversation pour optimiser la recherche.
+- **Observabilité et Monitoring** : Traçabilité de la pipeline RAG via **LangSmith** (`@traceable`). 
+- **Evaluation** : Benchmarks pour mesurer les métriques du retrieval (Hit Rate@K, MRR, MAP, NDCG) et de génération (LLM-as-a-Judge). 
+- **Architecture** : Backend asynchrone **FastAPI**, interface interactive **Streamlit** et conteneurisation complète avec **Docker Compose**. 
 
 
 ## Roadmap
 
-### Phase 1, 2 & 3 : Validées
-- Multimodalité (Docling)
-- Recherche Hybride (BM25 + Vectoriel Qdrant)
-- Re-ranking (Cross-Encoder)
-- Réécriture de requête & Conservation de Mémoire
-- Evaluation (Hit Rate, MRR, MAP, NDCG)
+### Phase Validées (1 à 5)
+- [x] Ingestion multiformat & multimodale (PDF, DOCX, PPTX, XLSX, HTML, MD via Docling)
+- [x] Recherche Hybride (Qdrant + BM25) & Re-ranking (Cross-Encoder)
+- [x] Mémoire conversationnelle & Réécriture de requête
+- [x] Découpage sémantique adaptatif & Pruning de contexte
+- [x] Cache sémantique vectoriel & Suivi de fréquence des requêtes
+- [x] Monitoring, traçabilité et observabilité avec LangSmith
+- [x] Benchmark et métriques d'évaluation (*Hit Rate, MRR, MAP, NDCG, LLM-as-a-Judge*)
 
-### Phase 4 :
-1. Chunking adaptatif et sémantique : Découpage basé sur la cohérance sémantique du texte pour préserver la stucture.
-2. Oberservabilité et Monitoring : Traçabilité complète de la pipeline RAG pour mesurer latence, coûts et qualité des réponses.
-3. Support multiformat : Prise en chage des fichiers Word (`.docx`), présentations (`.pptx`), tableaurs (`.xlsx`).
-
-### Phase 5 : 
-4. Compression du contexte : Réduction du volume de tokens du contexte avant envoi.
-5. Mise en cache sémantique : Cache vectoriel pour réutiliser les réponses aux questions similaires.
-
+### Phase 6 : Agentic RAG, Sécurité & Routing (En cours)
+- [ ] **Tools & MCP** : Intégration du Tool Calling et connexion au protocole MCP (Model Context Protocol).
+- [ ] **Access & RBAC** : Authentification OAuth2 / JWT et filtrage des documents au niveau vecteur Qdrant selon les rôles utilisateurs.
+- [ ] **Guardrails** : Anonymisation PII et détection des injections de prompt en entrée.
+- [ ] **Intelligent Router** : Routage dynamique des requêtes selon la complexité (Modèle rapide/économique vs Modèle raisonneur avancé).
 
 ## Stack technique 
 
-- Langage : Python 3.10+
-- RAG : LangChain, LangChain-Google-GenAI, LangChain-Chroma,HuggingFaceEmbeddings
-- IA et Vision : Google Gemini (Gemini Flash / Gemini Vision)
-- Stockage Vectoriel : Qdrant
-- Backend : FastAPI, Uvicorn
-- Frontend : Streamlit
-- DevOps : Docker
+- **Langage** : Python 3.10+
+- **RAG** : LangChain, LangChain-Google-GenAI, LangChain-Community
+- **Modèles LLM & Embeddings** : Google Gemini (`gemini-3.5-flash-lite`), HuggingFace Embeddings (`sentence-transformers/all-mpnet-base-v2`)
+- **Modèle de Re-ranking** : `BAAI/bge-reranker-base`
+- **Vector Database** : Qdrant
+- **Monitoring** : LangSmith
+- **Backend API** : FastAPI, Uvicorn
+- **Interface Utilisateur** : Streamlit
+- **DevOps** : Docker
 
 
 ## Structure du projet
@@ -66,51 +66,69 @@ agent-rag-multimodal/
 ├── Dockerfile                      # Config image Docker
 ├── docker-compose.yml              # Orchestration des services (API + Streamlit)
 ├── requirements.txt                # Dépendances du projet
-└── .env                            # Variables d'environnement (Clé API Gemini)
+└── .env                            # Variables d'environnement (Clé API Gemini et LangSmith)
+```
 
 ## Installation et Lancement
 
 ### Option 1 : Lancement via Docker Compose
 
-1. Créer un ficher .env à la racine contenant votre clé API : 
+1. **Configurer les variables d'environnement dans un fichier `.env` à la racine** : 
 ```text
 GOOGLE_API_KEY=votre_cle_api_gemini_ici
+QDRANT_URL=http://qdrant:6333
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+LANGCHAIN_API_KEY=votre_cle_langsmith
+LANGCHAIN_PROJECT=rag-multimodal-agent
 ````
 
-2. Lancez les conteneurs :
+2. **Lancez les conteneurs** :
 ```bash
 docker compose up --build
 ```
 
-3. Accédez aux servies : 
+3. **Accédez aux servies** : 
 - Interface Steamlit : http://localhost:8501
 - Documentation FastAPI : http://localhost:8000/docs
+- Tableau de bord Qdrant : http://localhost:6333/dashboard
 
 ### Option 2 : lancement en local
 
-1. Clone le projet et créer un environemment virtuel :
+1. **Clone le projet et créer un environemment virtuel** :
 ```bash
 python -m venv venv
 source venv/bin/activate # Sur Windows : venv\Scripts\activate
 ```
 
-2. Installer les dépendaces :
+2. **Installer les dépendaces** :
 ```bash
 pip install -r requirements.txt
-````
-
-3. Créer un ficher .env à la racine contenant votre clé API : 
-```text
-GOOGLE_API_KEY=votre_cle_api_gemini_ici
 ```
 
-4. Lancer le Backend (Terminal 1) :
+3. **Lancer Qdrant via Docker** :
 ```bash
-uvicorn src.api:app --reload
+docker run -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant
 ```
 
-5. Lancer le Frontend (Terminal 2) :
+4. **Lancer le Backend (Terminal 1)** :
 ```bash
-streamlit run src/app.py
+uvicorn src.api:app --reload --port 8000
 ```
 
+5. **Lancer le Frontend (Terminal 2)** :
+```bash
+streamlit run src/app.py --server.port 8501
+```
+
+## Évaluation et Benchmarking
+
+Pour exécuter la suite de tests automatique sur le jeu de données de référence (`golden_dataset.json`) :
+
+```bash
+# Évaluation des performances du Retrieval (Hit Rate, MRR, MAP, NDCG)
+python evaluation/evaluate_retrieval.py
+
+# Évaluation globale des réponses générées (Mots-clés + LLM-as-a-Judge)
+python evaluation/evaluate.py
+```
