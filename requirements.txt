@@ -22,3 +22,6 @@ rank-bm25
 qdrant-client
 mcp
 pytest
+duckduckgo-search
+beautifulsoup4
+httpx

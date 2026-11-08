@@ -7,7 +7,13 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, Tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from src.tools.mcp_tools import create_rag_retrieval_tool, calculator_tool, MCPToolClient
+from src.tools.mcp_tools import (
+    create_rag_retrieval_tool,
+    web_search_tool,
+    fetch_web_page_tool,
+    calculator_tool,
+    MCPToolClient
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +40,16 @@ class AgenticRAGPipeline:
                 prune_context_fn=self.prune_context,
                 last_sources_store=self.last_retrieved_sources
             )
-            tools.append(rag_tool)
-            tools.append(calculator_tool)
+            # Enregistrement des outils cibles (RAG, Web Search, Web Scraping, Calculatrice)
+            tools.extend([
+                rag_tool,
+                web_search_tool,
+                fetch_web_page_tool,
+                calculator_tool
+            ])
             
             mcp_client = MCPToolClient(server_urls=self.config.mcp_server_urls)
-            mcp_tools = mcp_client.get_tools_sync()
-            tools.extend(mcp_tools)
+            tools.extend(mcp_client.get_tools_sync())
             
         logger.info("%d outils (Tools & MCP) enregistrés dans l'agent.", len(tools))
         return tools
@@ -66,9 +76,7 @@ class AgenticRAGPipeline:
     def rewrite_query(self, user_query: str):
         rewrite_prompt = ChatPromptTemplate.from_messages([
             ("system", "Vous êtes un expert en recherche documentaire. "
-                       "Votre rôle est de réécrire la question de l'utilisateur pour qu'elle soit claire, "
-                       "autonome et maximise la pertinence d'une recherche par similarité dans des documents techniques. "
-                       "Ne répondez pas à la question, donnez uniquement la requête reformulée."),
+                       "Réécrivez la question utilisateur pour qu'elle soit claire et précise."),
             ("human", "Question originale : {query}")
         ])
         rewriter_chain = rewrite_prompt | self.llm
@@ -114,11 +122,12 @@ class AgenticRAGPipeline:
 
         messages = [
             SystemMessage(content=(
-                "Vous êtes un assistant IA autonome doté d'outils spécialisés (Tools & MCP).\n"
-                "Règles :\n"
-                "1. Pour toute question nécessitant des connaissances métiers ou des documents, utilisez l'outil `search_internal_documents`.\n"
-                "2. Pour les calculs arithmétiques ou financiers, utilisez `calculator_tool`.\n"
-                "3. Basez vos réponses sur les faits retournés par les outils."
+                "Vous êtes un assistant IA autonome doté d'outils réels :\n"
+                "1. `search_internal_documents` : Utilisez cet outil pour toute question relative aux documents internes de l'entreprise.\n"
+                "2. `web_search_tool` : Utilisez cet outil pour chercher sur Internet si la réponse est absente des documents internes ou concerne l'actualité.\n"
+                "3. `fetch_web_page_tool` : Utilisez cet outil pour lire le contenu textuel complet d'une URL web spécifique.\n"
+                "4. `calculator_tool` : Utilisez cet outil pour réaliser des calculs arithmétiques exacts.\n"
+                "Basez votre réponse finale sur le retour direct des outils."
             ))
         ]
         
@@ -148,14 +157,15 @@ class AgenticRAGPipeline:
                 
                 selected_tool = tools_by_name.get(tool_name)
                 if selected_tool:
-                    out = selected_tool.invoke(tool_args)
-                    tool_outputs_text.append(str(out))
-                    messages.append(ToolMessage(content=str(out), tool_call_id=tool_call_id))
+                    tool_output = selected_tool.invoke(tool_args)
+                    tool_outputs_text.append(f"Output [{tool_name}]: {tool_output}")
+                    messages.append(ToolMessage(content=str(tool_output), tool_call_id=tool_call_id))
 
             synth_prompt = (
-                f"En vous basant sur la question initiale '{query}' et sur le résultat d'exécution des outils "
-                f"ci-dessous, formulez une réponse directe, complète et structurée à l'utilisateur :\n\n"
+                f"Question originale : '{query}'\n\n"
+                f"Résultats d'exécution des outils :\n"
                 + "\n\n".join(tool_outputs_text)
+                + "\n\nRédigez une réponse claire, précise et structurée à l'utilisateur."
             )
             final_response = self.llm.invoke([HumanMessage(content=synth_prompt)])
             raw_answer = final_response.content
