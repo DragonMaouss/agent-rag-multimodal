@@ -10,7 +10,7 @@ st.set_page_config(
 
 # Titre de l'application
 st.title("🤖 Agent RAG Multimodal")
-st.markdown("Posez vos questions sur le document multimodal et obtenez des réponses précises basées sur le texte et les images.")
+st.markdown("Posez vos questions sur vos documents multiformats (PDF, Word, Excel, PowerPoint, Markdown, HTML).")
 
 # URL de l'API FastAPI
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
@@ -25,14 +25,13 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input acceptant les PDF
+# Chat input pour poser une question ou télécharger un document
 prompt = st.chat_input(
-    "Posez votre question ici...",
+    "Posez votre question ou téléchargez un document...",
     accept_file=True,
     file_type=["pdf", "docx", "pptx", "xlsx", "html", "md"]
 )
 
-# Saisir une question
 if prompt:
     user_text = prompt.text if hasattr(prompt, "text") else prompt.get("text","")
     uploaded_files = prompt.files if hasattr(prompt, "files") else prompt.get("files","")
@@ -46,7 +45,7 @@ if prompt:
             with st.chat_message("user") : 
                 st.markdown(file_indicator)
 
-            with st.spinner(f"Extraction du texte, des images et indexation de {uploaded_file.name} ...") :
+            with st.spinner(f"Indexation de {uploaded_file.name} ..."):
                 mime_type = uploaded_file.type or "application/octet-stream"
                 files = {"file": (uploaded_file.name, uploaded_file.getvalue(), mime_type)}
                 try : 
@@ -54,9 +53,9 @@ if prompt:
                     if res.status_code == 200 :
                         success_msg = f"{uploaded_file.name} indexé avec succès."
                         st.success(success_msg)
-                        st.session_state.messages.append({"role" : "assistant", "content" : success_msg })
+                        st.session_state.messages.append({"role": "assistant", "content": success_msg})
                     else :
-                        error_msg = f"Erreur lors de l'indexation : {res.text}"
+                        error_msg = f"Erreur d'indexation ({res.status_code}) : {res.text}"
                         st.error(error_msg)
                         st.session_state.messages.append({"role" : "assistant", "content" : error_msg })
 
@@ -72,7 +71,7 @@ if prompt:
 
         # Envoyer la question à l'API FastAPI
         with st.chat_message("assistant") :
-            with st.spinner("L'agent RAG Multimodal réfléchit..."):
+            with st.spinner("L'agent RAG réfléchit..."):
                 try : 
                     payload = {
                         "query" : user_text,
@@ -84,11 +83,8 @@ if prompt:
                         answer = data.get("answer", "Aucune réponse trouvée.")
                         sources = data.get("sources", [])
                     else:
-                        answer = f"Erreur lors de la requête à l'API : {reponse.status_code}"
+                        answer = f"Erreur API ({reponse.status_code})"
                         sources = []
-                except requests.exceptions.ConnectionError as e:
-                    answer = f"Erreur de connexion à l'API : {str(e)}"
-                    sources = []
                 except Exception as e:
                     answer = f"Une erreur est survenue : {str(e)}"
                     sources = []
@@ -97,24 +93,18 @@ if prompt:
 
                 # Affichage des sources
                 if sources :
-                    with st.expander("Sources et documents référencés"):
+                    with st.expander("Sources consultées") :
                         for src in sources:
-                            source_name = src.get("source")
-                            page_num = src.get("page")
-                            img_idx = src.get("image_index")
-
-                            if img_idx is not None:
-                                st.markdown(f"- {source_name} (Page {page_num} — Schéma/Image n°{img_idx})")
+                            s_name = src.get("source")
+                            p_num = src.get("page")
+                            img_i = src.get("image_index")
+                            if img_i is not None:
+                                st.markdown(f"- **{s_name}** (Page {p_num} — Image/Schéma #{img_i})")
                             else:
-                                st.markdown(f"- {source_name} (Page {page_num})")
-                
-                # Construire le message complet
-                assistant_full_content = answer
-                if sources:
-                    sources_text = "\n\n*Sources :* " + ", ".join(
-                        [f"{s['source']} (p. {s['page']}" + (f", img {s['image_index']}" if s['image_index'] else "") + ")" for s in sources]
-                    )
-                    assistant_full_content += sources_text
+                                st.markdown(f"- **{s_name}** (Page {p_num})")
 
-                # Ajouter la réponse de l'assistant à l'historique
-                st.session_state.messages.append({"role": "assistant", "content": assistant_full_content})
+                assistant_full = answer
+                if sources:
+                    assistant_full += "\n\n*Sources :* " + ", ".join([f"{s['source']} (p. {s['page']})" for s in sources])
+
+                st.session_state.messages.append({"role": "assistant", "content": assistant_full})

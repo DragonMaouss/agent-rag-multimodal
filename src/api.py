@@ -1,34 +1,51 @@
 import os
+import logging
+from contextlib import asynccontextmanager
+from typing import List, Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import List, Optional
-from src.rag_multimodal import MIN_FREQUENCY_THRESHOLD, check_semantic_cache, process_and_index_file, get_rag_chain, prune_context, rewrite_query, store_in_semantic_cache, track_query_frequency
-from langchain_core.messages import HumanMessage, AIMessage
-from langsmith import traceable
+from langchain_huggingface import HuggingFaceEmbeddings
 
-# Chargement des variables d'environnement
+from src.config import settings
+from src.core.database import QdrantManager
+from src.core.indexer import DocumentIndexer
+from src.core.retriever import HybridRetrieverBuilder
+from src.pipeline import RAGPipeline
+
 load_dotenv()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("rag_api")
 
-SUPPORTED_EXTENSIONS = (".pdf", ".docx", ".pptx", ".xlsx", ".html", ".md")
+os.makedirs(settings.upload_dir, exist_ok=True)
 
-# Initialisation de l'application FastAPI
+# Container pour le partage propre des composants au sein de l'application
+app_state = {}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("--- Initialisation des composants du RAG ---")
+    embedding = HuggingFaceEmbeddings(
+        model_name=settings.embedding_model,
+        encode_kwargs={"normalize_embeddings": True}
+    )
+    db_manager = QdrantManager(config=settings, embedding_function=embedding)
+    indexer = DocumentIndexer(config=settings, embedding_function=embedding, qdrant_client=db_manager.client)
+    retriever_builder = HybridRetrieverBuilder(config=settings, indexer=indexer)
+    pipeline = RAGPipeline(config=settings, db_manager=db_manager, indexer=indexer, retriever_builder=retriever_builder)
+
+    app_state["indexer"] = indexer
+    app_state["pipeline"] = pipeline
+    logger.info("--- Agent RAG Prêt pour Production ---")
+    yield
+    app_state.clear()
+
 app = FastAPI(
     title="Agent RAG Multimodal API",
-    description="API pour l'Agent RAG Multimodal utilisant FastAPI, LangChain et Qdrant.",
-    version="1.0.0",
+    description="API modulaire et scalable pour l'Agent RAG Multimodal.",
+    version="2.0.0",
+    lifespan=lifespan
 )
-
-# Dossier pour stocker les fichiers téléchargés
-UPLOAD_DIR = "data"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Initialisation globale du RAG au démarrage de l'application
-print("--- Initialisation du RAG Multimodal ---")
-
-rag_chain = get_rag_chain()
-
-print("--- RAG Multimodal initialisé avec succès ---")
 
 class SourceInfo(BaseModel):
     source: str
@@ -47,104 +64,36 @@ class QueryResponse(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Bienvenue sur l'API de l'Agent RAG Multimodal. Utilisez le point de terminaison /query pour poser vos questions."}
-
+    return {"message": "API Agent RAG Multimodal opérationnelle."}
 
 @app.post("/upload")
-async def upload_pdf(file : UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()) :
-    """
-    Endpoint de telechargement et d'indexation d'un fichier PDF
-    """
-    try :
+async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+    try:
         file_ext = os.path.splitext(file.filename)[1].lower()
-        if file_ext not in SUPPORTED_EXTENSIONS:
+        if file_ext not in settings.supported_extensions:
             raise HTTPException(
                 status_code=400,
-                detail=f"Format '{file_ext}' non pris en charge. Formats acceptés : {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
+                detail=f"Format '{file_ext}' non supporté. Formats valides : {', '.join(settings.supported_extensions)}"
             )
         
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        file_path = os.path.join(settings.upload_dir, file.filename)
         contents = await file.read()
         with open(file_path, "wb") as f :
             f.write(contents)
 
-        # Traitement asynchrone des documents
-        background_tasks.add_task(process_and_index_file, file_path)
-
-        return {"filename" : file.filename, "message" : f"Fichier {file.filename} reçu et en cours d'indexation en arrière-plan."}
-    except Exception as e :
+        indexer: DocumentIndexer = app_state["indexer"]
+        background_tasks.add_task(indexer.index_file, file_path)
+        return {"filename": file.filename, "message": f"Fichier {file.filename} reçu et indexation lancée."}
+    except Exception as e:
+        logger.error("Erreur d'upload : %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/query", response_model=QueryResponse)
-@traceable(name="API_QUERY_ENDPOINT", tags=["production", "api-query"])
 def query_rag(request: QueryRequest):
-    """
-    Endpoint principal permettant de poser une question a l'agent RAG.
-    """
-    try : 
-        if not request.query.strip():
-            raise HTTPException(status_code=400, detail="La requête ne peut pas être vide.")
-
-        # Vérification du cache sémantique pour les questions précédemment posées
-        if not request.chat_history:
-            cached_response = check_semantic_cache(request.query)
-            if cached_response:
-                return cached_response
-
-        query_hits = track_query_frequency(request.query)
-            
-        # Transformation de l'historation en langchain
-        langchain_history = []
-        if request.chat_history :
-            for msg in request.chat_history:
-                if msg["role"] == "user":
-                    langchain_history.append(HumanMessage(content=msg["content"]))
-                else:
-                    langchain_history.append(AIMessage(content=msg["content"]))
-
-        
-        # Exécution de la chaîne RAG
-        optimized_request = rewrite_query(request.query)
-        response = rag_chain.invoke({
-            "input": optimized_request,
-            "chat_history" : langchain_history
-        })
-
-        raw_docs = response.get("context", [])
-        pruned_docs = prune_context(raw_docs, query=optimized_request)
-
-        # Extraction des sources
-        sources_list = []
-        seen = set()
-
-        for doc in pruned_docs:
-            metadata = doc.metadata
-            source_file = os.path.basename(metadata.get("source","Inconnu"))
-            page_num = metadata.get("page",1)
-            img_idx = metadata.get("image_index", None)
-
-            # Clé unique pour éviter les doublons si plusieurs chunks proviennet de la même page/image
-            identifier = (source_file, page_num, img_idx)
-            if identifier not in seen:
-                seen.add(identifier)
-                sources_list.append({
-                    "source" : source_file,
-                    "page" : page_num,
-                    "image_index" : img_idx
-                })
-
-        answer = response["answer"]
-
-        # Stockage dans le cache semantique si la reponse est valide
-        if not request.chat_history and answer and query_hits >= MIN_FREQUENCY_THRESHOLD:
-            store_in_semantic_cache(request.query, answer, sources_list)
-
-        return {
-            "question": request.query,
-            "answer": response["answer"],
-            "sources": sources_list,
-            "cache_hit": False
-        }
+    try:
+        pipeline: RAGPipeline = app_state["pipeline"]
+        res = pipeline.run_query(query=request.query, raw_chat_history=request.chat_history)
+        return res
     except Exception as e:
+        logger.error("Erreur d'exécution query : %s", e)
         raise HTTPException(status_code=500, detail=str(e))

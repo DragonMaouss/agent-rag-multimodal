@@ -279,5 +279,83 @@
     "expected_sources": ["QuantumAstophysics3.pdf", "Communiqué de presse Carrefour T1 2026.pdf"],
     "expected_keywords": ["aucun rapport", "domaines distincts", "aberrant"],
     "ground_truth": "Il s'agit d'une question piège multi-saut non corrélée : le choix du moment cinétique de l'orbite comme analogue de la constante de Planck n'a aucun lien avec la performance financière de Carrefour au premier trimestre 2026[cite: 41, 165]."
+  },
+  {
+    "id": 45,
+    "question": "Quel est l'indice IPCH (HICP) de l'Union Européenne pour le mois de janvier 1996 dans la base de données Eurostat ?",
+    "ground_truth": "En janvier 1996 (1996-01), l'indice IPCH pour l'Union Européenne (EU) était de 51,98 (sur une base de référence 2025=100).",
+    "expected_sources": [
+      "prc_hicp_minr__custom_20077942_spreadsheet.xlsx"
+    ],
+    "expected_keywords": [
+      "51,98",
+      "51.98",
+      "1996-01",
+      "Union"
+    ]
+  },
+  {
+    "id": 46,
+    "question": "Quelle est la durée initiale et la période de la mise à disposition des locaux de l'Espace Camus consentie à l'AFM Téléthon par la ville d'Andrézieux-Bouthéon ?",
+    "ground_truth": "La mise à disposition des locaux est consentie à titre précaire et révocable pour une durée de 6 ans, couvrant la période du 1er avril 2023 au 31 mars 2029 inclus.",
+    "expected_sources": [
+      "b12b11baf0d4c3ac7c664233e019c90b272f1745a10f40a4f6bbd5f439e7216d.docx"
+    ],
+    "expected_keywords": [
+      "6 ans",
+      "six ans",
+      "1er Avril 2023",
+      "31 Mars 2029"
+    ]
+  },
+  {
+    "id": 47,
+    "question": "Quelle nomination au conseil de planification est inscrite à l'ordre du jour du Town of Prattsville Board le 10 février 2025 ?",
+    "ground_truth": "La nomination d'Elliott Oakes au conseil de planification (Planning Board appointment – Elliott Oakes) est inscrite à la rubrique New Business.",
+    "expected_sources": [
+      "77c33ab2ca57efd0d4afb87f08c45c88f3984256c3fd5fdf3e81f87a24644760.docx"
+    ],
+    "expected_keywords": [
+      "Elliott Oakes",
+      "Planning Board"
+    ]
+  },
+  {
+    "id": 48,
+    "question": "Quels sont les modèles d'embedding et de re-ranking spécifiés dans la documentation technique du RAG multimodal ?",
+    "ground_truth": "Le modèle d'embedding utilisé est sentence-transformers/all-mpnet-base-v2 de HuggingFace et le modèle de re-ranking est le Cross-Encoder BAAI/bge-reranker-base.",
+    "expected_sources": [
+      "README.md"
+    ],
+    "expected_keywords": [
+      "all-mpnet-base-v2",
+      "bge-reranker-base"
+    ]
+  },
+  {
+    "id": 49,
+    "question": "De combien a augmenté le chiffre d'affaires en comparables (LFL) de Carrefour lors du T1 2026 ?",
+    "ground_truth": "La croissance du chiffre d'affaires du Groupe Carrefour en magasins comparables (LFL) pour le premier trimestre 2026 est de +2,2%.",
+    "expected_sources": [
+      "Communiqué de presse Carrefour T1 2026.pdf"
+    ],
+    "expected_keywords": [
+      "+2,2%",
+      "2,2%",
+      "LFL"
+    ]
+  },
+  {
+    "id": 50,
+    "question": "Quel est le taux de croissance du chiffre d'affaires LFL du groupe Carrefour pour le 1er trimestre 2026 ?",
+    "ground_truth": "Le chiffre d'affaires du groupe Carrefour en magasins comparables (LFL) a progressé de +2,2% au premier trimestre 2026.",
+    "expected_sources": [
+      "Communiqué de presse Carrefour T1 2026.pdf"
+    ],
+    "expected_keywords": [
+      "+2,2%",
+      "2,2%",
+      "LFL"
+    ]
   }
 ]
