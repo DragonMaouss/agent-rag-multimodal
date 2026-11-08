@@ -9,6 +9,7 @@ langchain-google-genai
 langchain_huggingface
 langchain-qdrant
 langchain-experimental
+langchain-mcp-adapters
 sentence-transformers
 pydantic
 python-dotenv
@@ -19,3 +20,5 @@ torch
 torchvision
 rank-bm25
 qdrant-client
+mcp
+pytest

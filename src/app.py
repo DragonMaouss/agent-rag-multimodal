@@ -82,6 +82,15 @@ if prompt:
                         data = reponse.json()
                         answer = data.get("answer", "Aucune réponse trouvée.")
                         sources = data.get("sources", [])
+                        tool_calls = data.get("tool_calls", [])
+
+                        st.markdown(answer)
+
+                        # Affichage des outils MCP/Tools utilisés
+                        if tool_calls:
+                            with st.expander("🛠️ Outils & MCP exécutés"):
+                                for tc in tool_calls:
+                                    st.markdown(f"- **{tc.get('name')}** avec arguments : `{tc.get('args')}`")
                     else:
                         answer = f"Erreur API ({reponse.status_code})"
                         sources = []

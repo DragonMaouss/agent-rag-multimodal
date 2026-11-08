@@ -11,7 +11,7 @@ from src.config import settings
 from src.core.database import QdrantManager
 from src.core.indexer import DocumentIndexer
 from src.core.retriever import HybridRetrieverBuilder
-from src.pipeline import RAGPipeline
+from src.pipeline import AgenticRAGPipeline
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     db_manager = QdrantManager(config=settings, embedding_function=embedding)
     indexer = DocumentIndexer(config=settings, embedding_function=embedding, qdrant_client=db_manager.client)
     retriever_builder = HybridRetrieverBuilder(config=settings, indexer=indexer)
-    pipeline = RAGPipeline(config=settings, db_manager=db_manager, indexer=indexer, retriever_builder=retriever_builder)
+    pipeline = AgenticRAGPipeline(config=settings, db_manager=db_manager, indexer=indexer, retriever_builder=retriever_builder)
 
     app_state["indexer"] = indexer
     app_state["pipeline"] = pipeline
@@ -56,11 +56,15 @@ class QueryRequest(BaseModel):
     query: str
     chat_history : Optional[List[dict]] = None
 
+class ToolCallInfo(BaseModel):
+    name: str
+    args: dict
+
 class QueryResponse(BaseModel):
     question: str
     answer: str
     sources: List[SourceInfo]
-
+    tool_calls: Optional[List[ToolCallInfo]] = []
 
 @app.get("/")
 def read_root():
@@ -91,9 +95,16 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 @app.post("/query", response_model=QueryResponse)
 def query_rag(request: QueryRequest):
     try:
-        pipeline: RAGPipeline = app_state["pipeline"]
+        pipeline: AgenticRAGPipeline = app_state["pipeline"]
         res = pipeline.run_query(query=request.query, raw_chat_history=request.chat_history)
         return res
     except Exception as e:
         logger.error("Erreur d'exécution query : %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/tools")
+def list_available_tools():
+    """Retourne la liste des outils (Tools & MCP) enregistrés."""
+    pipeline: AgenticRAGPipeline = app_state["pipeline"]
+    tools_info = [{"name": t.name, "description": t.description} for t in pipeline.tools]
+    return {"tools_count": len(tools_info), "tools": tools_info}
