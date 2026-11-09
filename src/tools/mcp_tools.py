@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import httpx
 from langchain_core.tools import tool, BaseTool
 from langchain_core.documents import Document
+from qdrant_client.http import models as qdrant_models
 
 try:
     from duckduckgo_search import DDGS
@@ -17,24 +18,47 @@ logger = logging.getLogger(__name__)
 class RAGSearchToolInput:
     query: str
 
-def create_rag_retrieval_tool(retriever_builder, prune_context_fn, last_sources_store: list):
-    """
-    Transforme la recherche hybride RAG en outil pour l'agent.
-    """
-    retriever = retriever_builder.build()
 
+def create_rag_retrieval_tool(retriever_builder, prune_context_fn, last_sources_store: list, current_user_roles_fn):
+    """
+    Crée un outil RAG sécurisé avec filtrage RBAC temps réel.
+    """
     @tool("search_internal_documents")
     def search_internal_documents(query: str) -> str:
         """
-        Recherche des informations dans les documents internes indexés (PDF, Word, Excel, PowerPoint, Markdown).
-        À utiliser lorsque la question porte sur la documentation de l'entreprise, des schémas ou des données métiers.
+        Recherche des informations dans les documents internes indexés.
+        Applique automatiquement le filtrage selon les rôles de l'utilisateur connecté.
         """
         try:
-            docs: List[Document] = retriever.invoke(query)
-            pruned_docs = prune_context_fn(docs, query=query)
-            if not pruned_docs:
-                return "Aucun document pertinent trouvé dans la base interne."
+            user_roles = current_user_roles_fn()
+            logger.info("Recherche RAG exécutée avec les rôles utilisateur : %s", user_roles)
             
+            # 1. Filtre Vectoriel Qdrant
+            qdrant_filter = qdrant_models.Filter(
+                must=[
+                    qdrant_models.FieldCondition(
+                        key="metadata.access_roles",
+                        match=qdrant_models.MatchAny(any=user_roles)
+                    )
+                ]
+            )
+            
+            # Recherche filtrée Qdrant
+            vectorstore = retriever_builder.indexer.vectorstore
+            raw_vector_docs = vectorstore.similarity_search(query, k=10, filter=qdrant_filter)
+            
+            # 2. Filtre du corpus BM25 par rôle
+            corpus_docs = retriever_builder.indexer.get_all_corpus_documents()
+            allowed_corpus = [
+                d for d in corpus_docs
+                if any(role in d.metadata.get("access_roles", ["public"]) for role in user_roles)
+            ]
+            
+            # Élimination des doublons et pruning
+            pruned_docs = prune_context_fn(raw_vector_docs, query=query)
+            if not pruned_docs:
+                return "Aucun document pertinent accessible pour vos privilèges."
+
             # Réinitialisation et capture des sources
             last_sources_store.clear()
             seen = set()
@@ -59,8 +83,8 @@ def create_rag_retrieval_tool(retriever_builder, prune_context_fn, last_sources_
                 
             return "\n\n---\n\n".join(formatted_results)
         except Exception as e:
-            logger.error("Erreur lors de l'exécution du tool RAG : %s", e)
-            return f"Erreur lors de la recherche dans les documents : {str(e)}"
+            logger.error("Erreur lors de la recherche RAG RBAC : %s", e)
+            return f"Erreur de recherche documentaire : {str(e)}"
 
     return search_internal_documents
 

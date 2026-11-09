@@ -3,15 +3,18 @@ import logging
 from contextlib import asynccontextmanager
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi.params import Depends
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
+from fastapi.security import OAuth2PasswordRequestForm
 
 from src.config import settings
 from src.core.database import QdrantManager
 from src.core.indexer import DocumentIndexer
 from src.core.retriever import HybridRetrieverBuilder
 from src.pipeline import AgenticRAGPipeline
+from src.auth import User, create_access_token, get_current_user, verify_password, USERS_DB
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -66,9 +69,32 @@ class QueryResponse(BaseModel):
     sources: List[SourceInfo]
     tool_calls: Optional[List[ToolCallInfo]] = []
 
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    username: str
+    roles: List[str]
+
 @app.get("/")
 def read_root():
     return {"message": "API Agent RAG Multimodal opérationnelle."}
+
+@app.post("/login", response_model=TokenResponse)
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = USERS_DB.get(form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Nom d'utilisateur ou mot de passe incorrect",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": user.username, "roles": user.roles})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "username": user.username,
+        "roles": user.roles
+    }
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):

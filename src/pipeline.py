@@ -27,6 +27,7 @@ class AgenticRAGPipeline:
         
         # Instanciation de la liste avant d'initialiser les outils
         self.last_retrieved_sources: List[Dict[str, Any]] = []
+        self.active_user_roles: List[str] = ["public"]
         
         self.tools = self._initialize_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools) if self.tools else self.llm
@@ -38,16 +39,10 @@ class AgenticRAGPipeline:
             rag_tool = create_rag_retrieval_tool(
                 retriever_builder=self.retriever_builder,
                 prune_context_fn=self.prune_context,
-                last_sources_store=self.last_retrieved_sources
+                last_sources_store=self.last_retrieved_sources,
+                current_user_roles_fn=lambda: self.active_user_roles
             )
-            # Enregistrement des outils cibles (RAG, Web Search, Web Scraping, Calculatrice)
-            tools.extend([
-                rag_tool,
-                web_search_tool,
-                fetch_web_page_tool,
-                calculator_tool
-            ])
-            
+            tools.extend([rag_tool, web_search_tool, fetch_web_page_tool, calculator_tool])
             mcp_client = MCPToolClient(server_urls=self.config.mcp_server_urls)
             tools.extend(mcp_client.get_tools_sync())
             
@@ -107,7 +102,9 @@ class AgenticRAGPipeline:
         return pruned_docs
 
     @traceable(name="PIPELINE_RUN", tags=["production", "agentic_rag"])
-    def run_query(self, query: str, raw_chat_history: Optional[List[Dict[str, Any]]] = None):
+    def run_query(self, query: str, user_roles: Optional[List[str]] = None, raw_chat_history: Optional[List[Dict[str, Any]]] = None): 
+        self.active_user_roles = user_roles or ["public"]
+               
         if not query.strip():
             raise ValueError("La requête ne peut pas être vide.")
 

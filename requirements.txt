@@ -25,3 +25,4 @@ pytest
 duckduckgo-search
 beautifulsoup4
 httpx
+pyjwt

@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import List
+from typing import List, Optional
 from langchain_docling import DoclingLoader
 from langchain_docling.loader import ExportType
 from langchain_experimental.text_splitter import SemanticChunker
@@ -29,9 +29,9 @@ class DocumentIndexer:
         self._is_corpus_loaded = False
 
     @traceable(name="INDEX_FILE", tags=["ingestion"])
-    def index_file(self, file_path: str):
+    def index_file(self, file_path: str, access_roles: Optional[List[str]] = None):
         """
-        Extrait le contenu d'un fichier au format Markdown, découpe en chunks, enrichit les métadonnées et les ajoute dans la base.
+        Extrait et indexe un document en lui assignant des rôles d'accès RBAC (ex: ['rh', 'admin']).
         """
         if not os.path.exists(file_path):
             logger.warning("Fichier introuvable : %s", file_path)
@@ -42,8 +42,9 @@ class DocumentIndexer:
             logger.warning("Format non supporté : %s", ext)
             return 0
 
-        # Chargement du fichier avec Docling au format Markdown
-        logger.info("Extraction Docling pour : %s", file_path)
+        roles = access_roles or ["public"]
+        file_name = os.path.basename(file_path)
+
         try:
             loader = DoclingLoader(file_path=file_path, export_type=ExportType.MARKDOWN)
             raw_docs = loader.load()
@@ -53,13 +54,15 @@ class DocumentIndexer:
             file_name = os.path.basename(file_path)
             for doc in docs:
                 doc.page_content = f"Document source : {file_name}\n{doc.page_content}"
+                doc.metadata["source"] = file_name
+                doc.metadata["access_roles"] = roles  # Stockage des rôles dans le payload Qdrant
 
             filtered_docs = filter_complex_metadata(docs)
             self.vectorstore.add_documents(filtered_docs)
             
             # Mise à jour immédiate du cache BM25
             self._corpus_cache.extend(filtered_docs)
-            logger.info("%d chunks indexés pour %s", len(docs), file_name)
+            logger.info("%d chunks indexés pour %s avec rôles : %s", len(docs), file_name, roles)
             return len(docs)
         except Exception as e:
             logger.error("Erreur lors de l'indexation de %s : %s", file_path, e)

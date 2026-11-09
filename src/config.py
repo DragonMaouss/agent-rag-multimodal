@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     mcp_server_urls: List[str] = [os.getenv("MCP_SERVER_URL", "http://localhost:8001/sse")]
     mcp_connect_timeout: int = 10
 
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "secret-key-change-in-production")
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 120
+
+    # Hashs extraits de l'environnement (valeurs par défaut vides si non définies)
+    admin_password_hash: str = os.getenv("ADMIN_PASSWORD_HASH", "")
+    tech_password_hash: str = os.getenv("TECH_PASSWORD_HASH", "")
+    rh_password_hash: str = os.getenv("RH_PASSWORD_HASH", "")
+    guest_password_hash: str = os.getenv("GUEST_PASSWORD_HASH", "")
+
     class Config:
         env_file = ".env"
         extra = "ignore"
