@@ -49,9 +49,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     if not hashed_password:
         return False
     try:
+        normalized_hash = hashed_password.replace("$$", "$")
         return bcrypt.checkpw(
             plain_password.encode('utf-8'),
-            hashed_password.encode('utf-8')
+            normalized_hash.encode('utf-8')
         )
     except Exception as e:
         logger.error("Erreur de vérification du mot de passe : %s", e)
