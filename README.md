@@ -28,8 +28,8 @@ Application RAG (Retrieval-Augmented Generation) multimodale pour l'analyse  l'i
 - [x] Benchmark et métriques d'évaluation (*Hit Rate, MRR, MAP, NDCG, LLM-as-a-Judge*)
 
 ### Phase 6 : Agentic RAG, Sécurité & Routing (En cours)
-- [ ] **Tools & MCP** : Intégration du Tool Calling et connexion au protocole MCP (Model Context Protocol).
-- [ ] **Access & RBAC** : Authentification OAuth2 / JWT et filtrage des documents au niveau vecteur Qdrant selon les rôles utilisateurs.
+- [x] **Tools & MCP** : Intégration du Tool Calling et connexion au protocole MCP (Model Context Protocol).
+- [X] **Access & RBAC** : Authentification OAuth2 / JWT et filtrage des documents au niveau vecteur Qdrant selon les rôles utilisateurs.
 - [ ] **Guardrails** : Anonymisation PII et détection des injections de prompt en entrée.
 - [ ] **Intelligent Router** : Routage dynamique des requêtes selon la complexité (Modèle rapide/économique vs Modèle raisonneur avancé).
 
@@ -54,9 +54,17 @@ agent-rag-multimodal/
 ├── data/                           # Dossier contenant les PDF
 │
 ├── src/
-│   ├── api.py                      # Backend FastAPI
-│   ├── app.py                      # Interface utilisateur Streamlit
-│   └── rag_multimodal.py           # Pipeline d'extraction et d'indexation multimodale
+│   ├── config.py              # Centralisation de la configuration (Pydantic Settings)
+│   ├── core/
+│   │   ├── database.py        # QdrantManager (Collections, Cache sémantique & Staging)
+│   │   ├── indexer.py         # DocumentIndexer (Parsing Docling + Chunking sémantique + Cache BM25)
+│   │   └── retriever.py       # HybridRetrieverBuilder (Qdrant + BM25 + BGE Reranker)
+│   ├── core/
+│   │   └── mcp_tools.py
+│   ├── auth.py
+│   ├── pipeline.py            # RAGPipeline (LLM Gemini, Réécriture, Pruning & LangSmith)
+│   ├── api.py                 # FastAPI avec Injection de Dépendances (Lifespan Context)
+│   └── app.py                 # Streamlit UI (Chat + Support Multiformat)
 │
 ├── evaluation/                     # Datasets et scripts d'évaluation
 │   ├── golden_dataset.json     
@@ -127,8 +135,8 @@ Pour exécuter la suite de tests automatique sur le jeu de données de référen
 
 ```bash
 # Évaluation des performances du Retrieval (Hit Rate, MRR, MAP, NDCG)
-python evaluation/evaluate_retrieval.py
+python -m evaluation/evaluate_retrieval.py
 
 # Évaluation globale des réponses générées (Mots-clés + LLM-as-a-Judge)
-python evaluation/evaluate.py
+python -m evaluation/evaluate.py
 ```

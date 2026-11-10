@@ -15,6 +15,7 @@ from src.core.indexer import DocumentIndexer
 from src.core.retriever import HybridRetrieverBuilder
 from src.pipeline import AgenticRAGPipeline
 from src.auth import User, create_access_token, get_current_user, verify_password, USERS_DB
+from src.guardrails import GuardrailSecurityError
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -119,11 +120,14 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query", response_model=QueryResponse)
-def query_rag(request: QueryRequest):
+def query_rag(request: QueryRequest, current_user: User = Depends(get_current_user)):
     try:
         pipeline: AgenticRAGPipeline = app_state["pipeline"]
-        res = pipeline.run_query(query=request.query, raw_chat_history=request.chat_history)
+        res = pipeline.run_query(query=request.query, raw_chat_history=request.chat_history, user=current_user)
         return res
+    except GuardrailSecurityError as e:
+        logger.warning("Violation de sécurité détectée : %s", e)
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Erreur d'exécution query : %s", e)
         raise HTTPException(status_code=500, detail=str(e))

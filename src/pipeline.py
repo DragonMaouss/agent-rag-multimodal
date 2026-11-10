@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import List, Dict, Any, Optional
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -14,6 +13,7 @@ from src.tools.mcp_tools import (
     calculator_tool,
     MCPToolClient
 )
+from src.guardrails import InputGuardrails, RetrievalGuardrails, OutputGuardrails, GuardrailSecurityError
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,11 @@ class AgenticRAGPipeline:
         # Instanciation de la liste avant d'initialiser les outils
         self.last_retrieved_sources: List[Dict[str, Any]] = []
         self.active_user_roles: List[str] = ["public"]
-        
+
+        self.input_guardrails = InputGuardrails()
+        self.retrieval_guardrails = RetrievalGuardrails()
+        self.output_guardrails = OutputGuardrails()
+
         self.tools = self._initialize_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools) if self.tools else self.llm
 
@@ -84,11 +88,13 @@ class AgenticRAGPipeline:
         Élimine le bruit à l'intérieur des chunks retenus en ne gardant que 
         les phrases ayant la plus forte similarité sémantique avec la requête.
         """
-        if not docs:
+        safe_docs = self.retrieval_guardrails.validate_and_sanitize_docs(docs)
+        if not safe_docs:
             return []
+        
         query_words = set(query.lower().split())
         pruned_docs = []
-        for doc in docs:
+        for doc in safe_docs:
             sentences = [s.strip() for s in doc.page_content.split('.') if len(s.strip()) > 15]
             if len(sentences) <= max_sentences_per_chunk:
                 pruned_docs.append(doc)
@@ -110,12 +116,15 @@ class AgenticRAGPipeline:
 
         self.last_retrieved_sources.clear()
 
+        # Input Guardrails
+        sanitized_query, detected_pii = self.input_guardrails.process(query)
+
         if not raw_chat_history:
-            cached_res = self.db_manager.check_semantic_cache(query)
+            cached_res = self.db_manager.check_semantic_cache(sanitized_query)
             if cached_res:
                 return cached_res
 
-        query_hits = self.db_manager.track_query_frequency(query)
+        query_hits = self.db_manager.track_query_frequency(sanitized_query)
 
         messages = [
             SystemMessage(content=(
@@ -135,7 +144,7 @@ class AgenticRAGPipeline:
                 else:
                     messages.append(AIMessage(content=msg["content"]))
 
-        optimized_query = self.rewrite_query(query)
+        optimized_query = self.rewrite_query(sanitized_query)
         messages.append(HumanMessage(content=optimized_query))
 
         ai_msg = self.llm_with_tools.invoke(messages)
@@ -169,15 +178,16 @@ class AgenticRAGPipeline:
         else:
             raw_answer = ai_msg.content
 
-        answer = self._parse_llm_output(raw_answer)
+        parsed_answer = self._parse_llm_output(raw_answer)
         sources_list = list(self.last_retrieved_sources)
+        final_answer = self.output_guardrails.process(parsed_answer, sources_list)
 
-        if not raw_chat_history and answer and query_hits >= self.config.min_frequency_threshold:
-            self.db_manager.store_in_semantic_cache(query, answer, sources_list)
+        if not raw_chat_history and final_answer and query_hits >= self.config.min_frequency_threshold:
+            self.db_manager.store_in_semantic_cache(sanitized_query, final_answer, sources_list)
 
         return {
-            "question": query,
-            "answer": answer,
+            "question": sanitized_query,
+            "answer": final_answer,
             "sources": sources_list,
             "tool_calls": tool_calls_executed,
             "cache_hit": False
