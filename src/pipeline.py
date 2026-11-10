@@ -6,14 +6,8 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, Tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 
-from src.tools.mcp_tools import (
-    create_rag_retrieval_tool,
-    web_search_tool,
-    fetch_web_page_tool,
-    calculator_tool,
-    MCPToolClient
-)
-from src.guardrails import InputGuardrails, RetrievalGuardrails, OutputGuardrails, GuardrailSecurityError
+from src.tools.mcp_tools import create_rag_retrieval_tool, web_search_tool, fetch_web_page_tool, calculator_tool, MCPToolClient
+from src.guardrails import InputGuardrails, RetrievalGuardrails, OutputGuardrails, ToolGuardrails, FinalResponseGuardrails
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +25,9 @@ class AgenticRAGPipeline:
 
         self.input_guardrails = InputGuardrails()
         self.retrieval_guardrails = RetrievalGuardrails()
+        self.tool_guardrails = ToolGuardrails()
         self.output_guardrails = OutputGuardrails()
+        self.final_response_guardrails = FinalResponseGuardrails()
 
         self.tools = self._initialize_tools()
         self.llm_with_tools = self.llm.bind_tools(self.tools) if self.tools else self.llm
@@ -119,6 +115,10 @@ class AgenticRAGPipeline:
         # Input Guardrails
         sanitized_query, detected_pii = self.input_guardrails.process(query)
 
+        # Query Processing Guardrails
+        intent = self.query_processing_guardrails.classify_intent(sanitized_query)
+        logger.info("Bloc 2 Query Processing : Intention classifiée -> %s", intent)
+
         if not raw_chat_history:
             cached_res = self.db_manager.check_semantic_cache(sanitized_query)
             if cached_res:
@@ -157,13 +157,21 @@ class AgenticRAGPipeline:
             tool_outputs_text = []
             for tool_call in ai_msg.tool_calls:
                 tool_name = tool_call["name"]
-                tool_args = tool_call["args"]
+                raw_args = tool_call["args"]
                 tool_call_id = tool_call.get("id", tool_name)
-                tool_calls_executed.append({"name": tool_name, "args": tool_args})
-                
+
+                # Validation des appels d'outils via Guardrails
+                validated_args = self.tool_guardrails.validate_tool_call(
+                    tool_name=tool_name,
+                    tool_args=raw_args,
+                    user_roles=self.active_user_roles
+                )
+
+                tool_calls_executed.append({"name": tool_name, "args": validated_args})
                 selected_tool = tools_by_name.get(tool_name)
+
                 if selected_tool:
-                    tool_output = selected_tool.invoke(tool_args)
+                    tool_output = selected_tool.invoke(validated_args)
                     tool_outputs_text.append(f"Output [{tool_name}]: {tool_output}")
                     messages.append(ToolMessage(content=str(tool_output), tool_call_id=tool_call_id))
 
@@ -178,17 +186,20 @@ class AgenticRAGPipeline:
         else:
             raw_answer = ai_msg.content
 
+        # Output Guardrails
         parsed_answer = self._parse_llm_output(raw_answer)
         sources_list = list(self.last_retrieved_sources)
-        final_answer = self.output_guardrails.process(parsed_answer, sources_list)
+        sanitized_answer = self.output_guardrails.process(parsed_answer, sources_list)
 
-        if not raw_chat_history and final_answer and query_hits >= self.config.min_frequency_threshold:
-            self.db_manager.store_in_semantic_cache(sanitized_query, final_answer, sources_list)
+        if not raw_chat_history and sanitized_answer and query_hits >= self.config.min_frequency_threshold:
+            self.db_manager.store_in_semantic_cache(sanitized_query, sanitized_answer, sources_list)
 
-        return {
-            "question": sanitized_query,
-            "answer": final_answer,
-            "sources": sources_list,
-            "tool_calls": tool_calls_executed,
-            "cache_hit": False
-        }
+        return self.final_response_guardrails.seal_response(
+            question=sanitized_query,
+            answer=sanitized_answer,
+            sources=sources_list,
+            tool_calls=tool_calls_executed,
+            detected_pii=detected_pii,
+            intent=intent.value,
+            cache_hit=False
+        )

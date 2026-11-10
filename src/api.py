@@ -64,11 +64,18 @@ class ToolCallInfo(BaseModel):
     name: str
     args: dict
 
+class SecurityEnvelope(BaseModel):
+    status: str
+    intent_classified: str
+    detected_pii: List[str]
+    guardrails_applied: List[str]
+
 class QueryResponse(BaseModel):
     question: str
     answer: str
     sources: List[SourceInfo]
     tool_calls: Optional[List[ToolCallInfo]] = []
+    security_envelope: Optional[SecurityEnvelope] = None
 
 class TokenResponse(BaseModel):
     access_token: str
