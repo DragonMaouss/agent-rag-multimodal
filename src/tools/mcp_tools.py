@@ -1,11 +1,10 @@
 import logging
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List
 from bs4 import BeautifulSoup
 import httpx
 from langchain_core.tools import tool, BaseTool
 from langchain_core.documents import Document
-from qdrant_client.http import models as qdrant_models
 
 try:
     from duckduckgo_search import DDGS
@@ -33,29 +32,12 @@ def create_rag_retrieval_tool(retriever_builder, prune_context_fn, last_sources_
             user_roles = current_user_roles_fn()
             logger.info("Recherche RAG exécutée avec les rôles utilisateur : %s", user_roles)
             
-            # 1. Filtre Vectoriel Qdrant
-            qdrant_filter = qdrant_models.Filter(
-                must=[
-                    qdrant_models.FieldCondition(
-                        key="metadata.access_roles",
-                        match=qdrant_models.MatchAny(any=user_roles)
-                    )
-                ]
-            )
-            
-            # Recherche filtrée Qdrant
-            vectorstore = retriever_builder.indexer.vectorstore
-            raw_vector_docs = vectorstore.similarity_search(query, k=10, filter=qdrant_filter)
-            
-            # 2. Filtre du corpus BM25 par rôle
-            corpus_docs = retriever_builder.indexer.get_all_corpus_documents()
-            allowed_corpus = [
-                d for d in corpus_docs
-                if any(role in d.metadata.get("access_roles", ["public"]) for role in user_roles)
-            ]
+            # Instanciation du retriever hybride filtré par rôles
+            retriever = retriever_builder.build(user_roles=user_roles)
+            raw_docs = retriever.invoke(query)
             
             # Élimination des doublons et pruning
-            pruned_docs = prune_context_fn(raw_vector_docs, query=query)
+            pruned_docs = prune_context_fn(raw_docs, query=query)
             if not pruned_docs:
                 return "Aucun document pertinent accessible pour vos privilèges."
 
