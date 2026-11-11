@@ -2,7 +2,7 @@ import os
 import logging
 from contextlib import asynccontextmanager
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, Form, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.params import Depends
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -104,7 +104,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     }
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+async def upload_file(file: UploadFile = File(...), access_roles: Optional[str] = Form("public"), background_tasks: BackgroundTasks = BackgroundTasks()):
     try:
         file_ext = os.path.splitext(file.filename)[1].lower()
         if file_ext not in settings.supported_extensions:
@@ -118,9 +118,12 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
         with open(file_path, "wb") as f :
             f.write(contents)
 
+        # Découpage et nettoyage de la liste des rôles d'accès
+        roles_list = [r.strip() for r in access_roles.split(",") if r.strip()] if access_roles else ["public"]
+
         indexer: DocumentIndexer = app_state["indexer"]
-        background_tasks.add_task(indexer.index_file, file_path)
-        return {"filename": file.filename, "message": f"Fichier {file.filename} reçu et indexation lancée."}
+        background_tasks.add_task(indexer.index_file, file_path,access_roles=roles_list)
+        return {"filename": file.filename, "access_roles": roles_list, "message": f"Fichier {file.filename} reçu et indexation lancée."}
     except Exception as e:
         logger.error("Erreur d'upload : %s", e)
         raise HTTPException(status_code=500, detail=str(e))
