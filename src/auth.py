@@ -1,4 +1,3 @@
-# src/auth.py (Extrait de la fonction verify_password)
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional

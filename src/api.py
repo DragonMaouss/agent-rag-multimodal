@@ -66,7 +66,6 @@ class ToolCallInfo(BaseModel):
 
 class SecurityEnvelope(BaseModel):
     status: str
-    intent_classified: str
     detected_pii: List[str]
     guardrails_applied: List[str]
 
@@ -130,7 +129,7 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 def query_rag(request: QueryRequest, current_user: User = Depends(get_current_user)):
     try:
         pipeline: AgenticRAGPipeline = app_state["pipeline"]
-        res = pipeline.run_query(query=request.query, raw_chat_history=request.chat_history, user=current_user)
+        res = pipeline.run_query(query=request.query, raw_chat_history=request.chat_history, user_roles=current_user.roles)
         return res
     except GuardrailSecurityError as e:
         logger.warning("Violation de sécurité détectée : %s", e)

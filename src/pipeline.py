@@ -115,10 +115,6 @@ class AgenticRAGPipeline:
         # Input Guardrails
         sanitized_query, detected_pii = self.input_guardrails.process(query)
 
-        # Query Processing Guardrails
-        intent = self.query_processing_guardrails.classify_intent(sanitized_query)
-        logger.info("Bloc 2 Query Processing : Intention classifiée -> %s", intent)
-
         if not raw_chat_history:
             cached_res = self.db_manager.check_semantic_cache(sanitized_query)
             if cached_res:
@@ -200,6 +196,5 @@ class AgenticRAGPipeline:
             sources=sources_list,
             tool_calls=tool_calls_executed,
             detected_pii=detected_pii,
-            intent=intent.value,
             cache_hit=False
         )

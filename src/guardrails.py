@@ -1,7 +1,6 @@
 import re
 import logging
 from typing import List, Dict, Any, Tuple
-from enum import Enum
 from pydantic import BaseModel, ValidationError
 from langchain_core.documents import Document
 
@@ -10,14 +9,6 @@ logger = logging.getLogger(__name__)
 class GuardrailSecurityError(Exception):
     """Exception levée en cas de violation des règles de sécurité."""
     pass
-
-
-class IntentType(str, Enum):
-    INTERNAL_DOCS = "internal_docs"
-    WEB_SEARCH = "web_search"
-    CALCULATION = "calculation"
-    GENERAL_CHAT = "general_chat"
-
 
 
 class InputGuardrails:
@@ -178,7 +169,6 @@ class FinalResponseGuardrails:
         sources: List[Dict[str, Any]],
         tool_calls: List[Dict[str, Any]],
         detected_pii: List[str],
-        intent: str,
         cache_hit: bool = False
     ) -> Dict[str, Any]:
         return {
@@ -189,7 +179,6 @@ class FinalResponseGuardrails:
             "cache_hit": cache_hit,
             "security_envelope": {
                 "status": "SECURE",
-                "intent_classified": intent,
                 "detected_pii": detected_pii,
                 "guardrails_applied": ["InputValidation", "QueryProcessing", "RetrievalACL", "ToolAuth", "OutputSanitization"]
             }

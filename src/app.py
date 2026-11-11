@@ -57,6 +57,34 @@ if not st.session_state.token:
                 else:
                     st.warning("Veuillez remplir tous les champs.")
 else : 
+
+    with st.sidebar:
+        st.title("Profil & Session")
+        st.success(f"Connecté : {st.session_state.username}")
+        
+        st.markdown("Privilèges / Rôles assignés :")
+        for role in st.session_state.roles:
+            st.markdown(f"- `{role}`")
+
+        st.divider()
+
+        # Rôles autorisés pour l'indexation
+        st.subheader("Indexation de document")
+        upload_roles_input = st.text_input(
+            "Rôles autorisés pour le document",
+            value="public",
+            help="Séparés par des virgules (ex: public, tech, rh)"
+        )
+
+        st.divider()
+
+        if st.button("Se déconnecter", type="secondary", use_container_width=True):
+            st.session_state.token = None
+            st.session_state.username = None
+            st.session_state.roles = []
+            st.session_state.messages = []
+            st.rerun()
+
     # Page principale de l'application
     st.title("🤖 Agent RAG Multimodal")
     st.markdown("Posez vos questions sur vos documents multiformats (PDF, Word, Excel, PowerPoint, Markdown, HTML).")
@@ -139,9 +167,8 @@ else :
 
                                 # Métadonnées de l'enveloppe de sécurité
                                 if security_env:
-                                    with st.expander("🛡️ Enveloppe de Sécurité & Classification d'Intention"):
+                                    with st.expander("🛡️ Enveloppe de Sécurité"):
                                         st.markdown(f"- Statut : `{security_env.get('status')}`")
-                                        st.markdown(f"- Intention classifiée : `{security_env.get('intent_classified')}`")
                                         pii = security_env.get('detected_pii', [])
                                         if pii:
                                             st.markdown(f"- PII Anonymisées : `{', '.join(pii)}`")
