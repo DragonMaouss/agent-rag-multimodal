@@ -118,7 +118,7 @@ class AgenticRAGPipeline:
         return pruned_docs
 
     @traceable(name="PIPELINE_RUN", tags=["production", "agentic_rag"])
-    def run_query(self, query: str, user_roles: Optional[List[str]] = None, raw_chat_history: Optional[List[Dict[str, Any]]] = None): 
+    def run_query(self, query: str, user_roles: Optional[List[str]] = None, raw_chat_history: Optional[List[Dict[str, Any]]] = None):
         self.active_user_roles = user_roles or ["public"]
                
         if not query.strip():
@@ -143,7 +143,7 @@ class AgenticRAGPipeline:
                 "2. `web_search_tool` : Utilisez cet outil pour chercher sur Internet si la réponse est absente des documents internes ou concerne l'actualité.\n"
                 "3. `fetch_web_page_tool` : Utilisez cet outil pour lire le contenu textuel complet d'une URL web spécifique.\n"
                 "4. `calculator_tool` : Utilisez cet outil pour réaliser des calculs arithmétiques exacts.\n"
-                "Basez votre réponse finale sur le retour direct des outils."
+                "Vous pouvez enchaîner plusieurs appels d'outils si nécessaire avant de rédiger une réponse finale claire, précise et structurée."
             ))
         ]
         
@@ -157,20 +157,25 @@ class AgenticRAGPipeline:
         optimized_query = self.rewrite_query(sanitized_query)
         messages.append(HumanMessage(content=optimized_query))
 
-        ai_msg = self.llm_with_tools.invoke(messages)
         tool_calls_executed = []
+        raw_answer = None
+        tools_by_name = {t.name: t for t in self.tools}
 
-        if hasattr(ai_msg, "tool_calls") and ai_msg.tool_calls:
-            tools_by_name = {t.name: t for t in self.tools}
+        # Boucle d'agent multi-tours bornée
+        for iteration in range(self.config.max_agent_iterations):
+            ai_msg = self.llm_with_tools.invoke(messages)
             messages.append(ai_msg)
-            
-            tool_outputs_text = []
+
+            if not getattr(ai_msg, "tool_calls", None):
+                raw_answer = ai_msg.content
+                break
+
             for tool_call in ai_msg.tool_calls:
                 tool_name = tool_call["name"]
                 raw_args = tool_call["args"]
-                tool_call_id = tool_call.get("id", tool_name)
+                tool_call_id = tool_call.get("id", f"{tool_name}_{iteration}")
 
-                # Validation des appels d'outils via Guardrails
+                # Validation RBAC et schéma d'arguments à chaque tour
                 validated_args = self.tool_guardrails.validate_tool_call(
                     tool_name=tool_name,
                     tool_args=raw_args,
@@ -181,20 +186,24 @@ class AgenticRAGPipeline:
                 selected_tool = tools_by_name.get(tool_name)
 
                 if selected_tool:
-                    tool_output = selected_tool.invoke(validated_args)
-                    tool_outputs_text.append(f"Output [{tool_name}]: {tool_output}")
-                    messages.append(ToolMessage(content=str(tool_output), tool_call_id=tool_call_id))
+                    try:
+                        tool_output = selected_tool.invoke(validated_args)
+                    except Exception as e:
+                        logger.error("Erreur lors de l'exécution de l'outil %s : %s", tool_name, e)
+                        tool_output = f"Erreur d'exécution de l'outil {tool_name} : {str(e)}"
+                else:
+                    tool_output = f"Outil '{tool_name}' indisponible."
 
-            synth_prompt = (
-                f"Question originale : '{query}'\n\n"
-                f"Résultats d'exécution des outils :\n"
-                + "\n\n".join(tool_outputs_text)
-                + "\n\nRédigez une réponse claire, précise et structurée à l'utilisateur."
-            )
-            final_response = self.llm.invoke([HumanMessage(content=synth_prompt)])
+                messages.append(ToolMessage(content=str(tool_output), tool_call_id=tool_call_id))
+
+        # Synthèse forcée si le nombre maximal d'itérations est atteint
+        if raw_answer is None:
+            logger.warning("Plafond de %d itérations atteint, synthèse finale forcée.", self.config.max_agent_iterations)
+            messages.append(HumanMessage(
+                content="Limite d'appels d'outils atteinte. Rédigez maintenant la réponse finale complète à partir des résultats déjà obtenus."
+            ))
+            final_response = self.llm.invoke(messages)
             raw_answer = final_response.content
-        else:
-            raw_answer = ai_msg.content
 
         # Output Guardrails
         parsed_answer = self._parse_llm_output(raw_answer)

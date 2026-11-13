@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     enable_tools: bool = True
     mcp_server_urls: List[str] = [os.getenv("MCP_SERVER_URL", "http://localhost:8001/sse")]
     mcp_connect_timeout: int = 10
+    max_agent_iterations: int = 4
 
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "secret-key-change-in-production")
     jwt_algorithm: str = "HS256"
