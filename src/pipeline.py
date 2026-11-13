@@ -1,4 +1,6 @@
 import logging
+import numpy as np
+import re
 from typing import List, Dict, Any, Optional
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -88,17 +90,29 @@ class AgenticRAGPipeline:
         if not safe_docs:
             return []
         
-        query_words = set(query.lower().split())
+        query_vec = np.array(self.indexer.embedding.embed_query(query), dtype=np.float32)
         pruned_docs = []
         for doc in safe_docs:
-            sentences = [s.strip() for s in doc.page_content.split('.') if len(s.strip()) > 15]
+            # Découpage sur ponctuation forte ou sauts de ligne (adapté au Markdown Docling)
+            sentences = [
+                s.strip()
+                for s in re.split(r"(?<=[.!?])\s+|\n+", doc.page_content)
+                if len(s.strip()) > 15
+            ]
             if len(sentences) <= max_sentences_per_chunk:
                 pruned_docs.append(doc)
                 continue
-
-            scored = [(sum(1 for w in s.lower().split() if w in query_words), s) for s in sentences]
-            top_sentences = set(s for _, s in sorted(scored, key=lambda x: x[0], reverse=True)[:max_sentences_per_chunk])
-            pruned_text = ". ".join([s for s in sentences if s in top_sentences]) + "."
+            
+            sentence_vecs = np.array(self.indexer.embedding.embed_documents(sentences), dtype=np.float32)
+            norms = np.linalg.norm(sentence_vecs, axis=1)
+            valid_mask = norms > 0
+            
+            similarities = np.zeros(len(sentences), dtype=np.float32)
+            similarities[valid_mask] = (sentence_vecs[valid_mask] @ query_vec) / (norms[valid_mask] * query_norm)
+            
+            # Sélection des meilleures phrases puis tri des indices pour préserver l'ordre du texte
+            top_indices = sorted(np.argsort(similarities)[::-1][:max_sentences_per_chunk])
+            pruned_text = " ".join(sentences[i] for i in top_indices)
             pruned_docs.append(Document(page_content=pruned_text, metadata=doc.metadata))
 
         return pruned_docs
